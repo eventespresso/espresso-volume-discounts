@@ -1,0 +1,10 @@
+#icon-options-event {
+    background: url("../images/events_icon_32.png") no-repeat scroll 0 0 transparent;
+}
+
+.icon32 {
+    float: left;
+    height: 34px;
+    margin: 7px 8px 0 0;
+    width: 36px;
+}
