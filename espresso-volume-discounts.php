@@ -3,7 +3,7 @@
 Plugin Name: Event Espresso Volume Discounts
 Plugin URI: http://www.eventespresso.com
 Description: Volume Discounts addon for Event Espresso - apply discounts based on a factor such as the number of events registered for, or the toal dollar value spent
-Version: 0.1
+Version: 0.2
 Author: Seth Shoultes
 Author URI: http://www.eventespresso.com
 Copyright (c) 2008-2011 Event Espresso  All Rights Reserved.
@@ -30,7 +30,7 @@ License:
  * EE_VLM_DSCNT class
  *
  * @package				Event Espresso
- * @subpackage			Volume Discounts
+ * @subpackage		Volume Discounts
  * @author					Brent Christensen 
  *
  */
@@ -1177,7 +1177,7 @@ class EE_VLM_DSCNT {
 		}
 		
 		echo '
-		<div id="shopping_cart_before_total" class="clear">'.$discount.'</div>';
+		<div id="shopping_cart_before_total" style="clear:both;">'.$discount.'</div>';
 
 	}
 
@@ -1193,7 +1193,10 @@ class EE_VLM_DSCNT {
 	*/	
 	public function hook_shopping_cart_after_total() {	
 	
-		echo '<div id="shopping_cart_after_total" class="clear"></div>';
+		echo '
+		<div id="shopping_cart_after_total" style="clear:both;"></div>
+		<div style="clear:both;"></div>
+		';
 	
 	}
 

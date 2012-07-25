@@ -13,7 +13,7 @@
 (function($) {
 
 	if ( $('#spinner').height() == null ) {
-		var spinner = '<img id="spinner" style="display:none" src="'+EEGlobals.plugin_url+'images/ajax-loader.gif">';
+		var spinner = '<img id="spinner" style="display:none;" src="'+EEGlobals.plugin_url+'images/ajax-loader.gif">';
 		$('#event_total_price').after( spinner );
 	}
 
@@ -278,8 +278,8 @@
 
 		
 						// put together discount html
-						var msg = '<span class="event_total_price clearfix">'+discount+'</span><span style="color: #333333; float: right; font-size: 25px; padding: 5px;">'+evd.msg+' ' + evd.cur_sign + '</span>';
-						msg = msg+'<span class="event_total_price clearfix">'+discounted_total+'</span><span style="color: #333333; float: right; font-size: 25px; padding: 5px;">Total ' + evd.cur_sign + '</span>';
+						var msg = '<span class="event_total_price" style="clear:both;">'+discount+'</span><span style="color: #333333; float: right; font-size: 25px; padding: 5px;">'+evd.msg+' ' + evd.cur_sign + '</span>';
+						msg = msg+'<span class="event_total_price" style="clear:both;" >'+discounted_total+'</span><span style="color: #333333; float: right; font-size: 25px; padding: 5px;">Total ' + evd.cur_sign + '</span>';
 						
 						// hide it, switch it, then fade it in... oh yeah that's nice
 						$('#shopping_cart_after_total').hide().html(msg).fadeIn();
@@ -374,7 +374,7 @@
 	}
 	
 	
-	$('#event_total_price').css({ 'padding-right' : '5px' });
+	//$('#event_total_price').css({ 'padding-right' : '5px' });
 
 	
 })(jQuery);
