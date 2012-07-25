@@ -316,7 +316,7 @@
 
 	function trigger_total_event_cost_update(){
 		// wait a bit
-		$.doTimeout( 1500, function() {
+//		$.doTimeout( 1500, function() {
 
 			// show spinny thing
 			//vlm_dscnt_loading();
@@ -332,7 +332,7 @@
 
 			// then trigger it
 			event_total_price_blur();
-		});		
+//		});		
 	}
 
 
