@@ -1261,7 +1261,8 @@ class EE_VLM_DSCNT {
 		if( isset ( $_REQUEST['vlm_dscnt'] )) {
 			$_SESSION['espresso_session']['volume_discount'] = $_REQUEST['vlm_dscnt'];
 			//die( $_SESSION['espresso_session']['volume_discount'] ); 
-			echo event_espresso_json_response(array('success' => 'The Volume Discount value in the session was updated successfully'));
+			//echo event_espresso_json_response(array('success' => 'The Volume Discount value in the session was updated successfully'));
+			echo json_encode( array( 'success' => 'The Volume Discount value in the session was updated successfully', 'errors' => FALSE, 'vlm_dscnt' => $_REQUEST['vlm_dscnt'] ));
 			die();			
 		} else {
 			die( '-1' );
