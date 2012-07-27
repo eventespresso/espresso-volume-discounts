@@ -127,12 +127,20 @@
 
 		// cycle through all of the events in the cart
 		$('.multi_reg_cart_block').each(function () {
-		
+			// total tickets for this event
+			var totalTickets = 0;
+			// all price selectors for this event
+			var priceSelects = $( this ).find( '.price_id' );
+			// loop thru price selectors
+			priceSelects.each(function () {
+				// verify it's a dropdown'
+				if ( $( this ).is('select')) {
+					// add number of selected tickets to total
+					totalTickets += parseInt( $( this ).val() );
+				} 
+			});
 			// set counters for events using dropdowns for number of tickets 
-			priceID = $( this ).find( '.price_id' );
-			if ( priceID.is('select')) {
-				$( this ).find( '.vlm_dscnt_cntr' ).val( priceID.val() );
-			} 
+			$( this ).find( '.vlm_dscnt_cntr' ).val( parseInt( totalTickets ));
 
 			// category id for this event
 			var event_cat = $( this ).find( '.vlm_dscnt_cat' ).val();	
@@ -169,17 +177,17 @@
 
 
 				}
-				
+				//alert( 'vlm_dscnt_cntr = ' + vlm_dscnt_cntr );
 				// if counter value is a number
 				if ( vlm_dscnt_cntr != NaN ) {
 					// add it up
-					vlm_dscnt_cntr_total = vlm_dscnt_cntr_total + vlm_dscnt_cntr;
+					vlm_dscnt_cntr_total = parseInt( vlm_dscnt_cntr_total ) + parseInt( vlm_dscnt_cntr );
 				}		
 						
 				//alert( '164) vlm_dscnt_cntr: '+vlm_dscnt_cntr+'\n\vlm_dscnt_cntr_total: '+vlm_dscnt_cntr_total );
 
 			}
-		
+	
 		});
 		
 		// set the counter total
@@ -227,6 +235,11 @@
 
 	function event_total_price_blur() {
 
+	    // Check to see if the counter has been initialized
+	    if ( typeof event_total_price_blur.counter == 'undefined' ) {
+	        event_total_price_blur.counter = 0;
+	    }
+		
 		var event_total_price = $('#event_total_price').html();
 		
 		if ( $.isNumeric( event_total_price )) {
@@ -289,11 +302,16 @@
 						if ( process_vlm_dscnt == 'Y' && ! isNaN(discount) && ! isNaN(discounted_total) ) {
 
 							// put together discount html
-							var msg = '<span class="event_total_price" style="clear:both;">'+discount+'</span>';
-							msg = msg+'<span style="color: #333333; float: right; font-size: 25px; padding: 5px;">'+evd.msg+' ' + evd.cur_sign + '</span>';
-							msg = msg+'<span class="event_total_price" style="clear:both;" >'+discounted_total+'</span>';
-							msg = msg+'<span style="color: #333333; float: right; font-size: 25px; padding: 5px;">Total ' + evd.cur_sign + '</span>';
-
+//							var msg = '<span class="event_total_price" style="clear:both;">'+discount+'</span>';
+//							msg = msg+'<span class="event_total_price" style="width:auto;">'+evd.msg+' ' + evd.cur_sign + '</span>';
+//							msg = msg+'<span class="event_total_price" style="clear:both;" >'+discounted_total+'</span>';
+//							msg = msg+'<span class="event_total_price" style="width:auto;">Total ' + evd.cur_sign + '</span>';
+							
+							var msg = '<span class="event_total_price" style="clear:both; width:auto;">'+evd.msg+' ' + evd.cur_sign + '<span>'+discount+'</span></span>';
+							msg = msg+'<span class="event_total_price" style="clear:both; width:auto;">Total ' + evd.cur_sign + '<span>'+discounted_total+'</span></span>';
+							
+							// style="color: #333333; float: right; font-size: 25px; padding: 5px;"
+							
 							// hide it, switch it, then fade it in... oh yeah that's nice
 							$('#shopping_cart_after_total').hide().html(msg).fadeIn();
 
@@ -304,12 +322,17 @@
 						}
 
 						// final check to make sure discounted total has been calculated correctly
-						if ( discounted_total == NaN || parseFloat(discounted_total) > parseFloat(orig_total) || discounted_total == '0.00' ) {
+						if ( event_total_price_blur.counter > 3 ) {
+							$('#spinner').fadeOut('fast');
+							return false;
+						} else if ( discounted_total == NaN || parseFloat(discounted_total) > parseFloat(orig_total) || discounted_total == '0.00' ) {			
+							event_total_price_blur.counter++;				
 							// if not then run the whole show again
 							event_total_price_blur();
 						} else {
 							// it's good? then store it in the session'
 							espresso_store_discount_in_session( discount );
+							$('#spinner').fadeOut('fast');
 						}
 						
 					} else {
@@ -318,12 +341,6 @@
 					}
 					
 				});	
-				
-//			if ( process_vlm_dscnt == 'Y' ) {
-//			} else {
-//				// remove discount
-//				$('#shopping_cart_after_total').html('')
-//			}		
 					 		
  		}
 
@@ -395,7 +412,6 @@
 		// initialize the cart	
 		kickstart();
 	}
-	
 	
 	//$('#event_total_price').css({ 'padding-right' : '5px' });
 
