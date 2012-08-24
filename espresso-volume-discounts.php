@@ -3,7 +3,7 @@
 Plugin Name: Event Espresso Volume Discounts
 Plugin URI: http://www.eventespresso.com
 Description: Volume Discounts addon for Event Espresso - apply discounts based on a factor such as the number of events registered for, or the toal dollar value spent
-Version: 0.2
+Version: 0.3
 Author: Seth Shoultes
 Author URI: http://www.eventespresso.com
 Copyright (c) 2008-2011 Event Espresso  All Rights Reserved.
