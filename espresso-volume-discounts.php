@@ -1233,7 +1233,7 @@ class EE_VLM_DSCNT {
 	*/
 	public function filter_attendee_cost( $attendee_cost ) {	
 	
-		if (  isset( $_SESSION['espresso_session']['grand_total'] ) &&  $_SESSION['espresso_session']['grand_total'] > 0 && 	isset( $_SESSION['espresso_session']['pre_discount_total'] ) && $_SESSION['espresso_session']['pre_discount_total'] > 0  ) {
+		if (  isset( $_SESSION['espresso_session']['grand_total'] ) &&  $_SESSION['espresso_session']['grand_total'] > 0 && 	isset( $_SESSION['espresso_session']['pre_discount_total'] ) && $_SESSION['espresso_session']['pre_discount_total'] > 0 && isset($_SESSION['espresso_session']['volume_discount']) && $_SESSION['espresso_session']['volume_discount'] > 0 ) {
 		
 			if ( $discount_ratio = $_SESSION['espresso_session']['grand_total'] / $_SESSION['espresso_session']['pre_discount_total'] ) {
 				$attendee_cost = $attendee_cost * $discount_ratio;
