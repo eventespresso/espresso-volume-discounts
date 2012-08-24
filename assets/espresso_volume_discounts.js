@@ -157,12 +157,18 @@
 				// is discount based on cart total ?
 				if ( vlm_dscnt_factor == 'fctr_dollar_value' ) {
 
-					// grab the price
-					var price = $( this ).find( 'td.price' ).html();				
-					// remove the currency sign
-					price = price.replace( evd.cur_sign, '');
-					// parse values as floats
-					vlm_dscnt_cntr = parseFloat( price );
+					// grab the prices
+					var prices = $( this ).find( 'td.price' );
+					vlm_dscnt_cntr = 0;
+					prices.each(function () {
+						price = $( this ).html();
+						quantity = $( this ).siblings( 'td.selection' ).children( '.price_id' ).val();
+						// remove the currency sign
+						price = price.replace( evd.cur_sign, '');
+						// parse values as floats
+						vlm_dscnt_cntr += parseFloat( price ) * quantity;
+					});
+										
 	
 					// make sure the counter total is set to 'T' 
 					$('#process_vlm_dscnt').val( 'T' );
@@ -388,7 +394,7 @@
 
 
 
-	$('.price_id').on( 'change', function(){
+	$('.price_id, #event_espresso_coupon_code').on( 'change', function(){
 		// click??? trigger it 
 		trigger_total_event_cost_update();
 //		event_total_price_blur();
