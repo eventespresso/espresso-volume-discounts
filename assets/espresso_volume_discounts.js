@@ -263,15 +263,17 @@
 				$.doTimeout( 1250, function() {
 				
 					// get the cart total
-					var event_total_price = $('#event_total_price').html()
-					event_total_price = $.trim( event_total_price );
+					var event_total_price_html = $('#event_total_price').html()
+					event_total_price_html = $.trim( event_total_price_html );
+					var event_total_price = parseFloat(event_total_price_html);
 					
 					// if cart total isn't done calculating, drive around in circles
 					while ( event_total_price == NaN ) {
 						// then every 1/4 second
 						$.doTimeout( 250, function() {
 							// check cart total again
-							event_total_price = $('#event_total_price').html()
+							event_total_price_html = $('#event_total_price').html();
+							event_total_price = parseFloat(event_total_price_html);
 						});
 					}
 					
