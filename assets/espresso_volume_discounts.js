@@ -1,14 +1,4 @@
-/*
- * jQuery doTimeout: Like setTimeout, but better! - v1.0 - 3/3/2010
- * http://benalman.com/projects/jquery-dotimeout-plugin/
- * 
- * Copyright (c) 2010 "Cowboy" Ben Alman
- * Dual licensed under the MIT and GPL licenses.
- * http://benalman.com/about/license/
- */
-(function($){var a={},c="doTimeout",d=Array.prototype.slice;$[c]=function(){return b.apply(window,[0].concat(d.call(arguments)))};$.fn[c]=function(){var f=d.call(arguments),e=b.apply(this,[c+f[0]].concat(f));return typeof f[0]==="number"||typeof f[1]==="number"?this:e};function b(l){var m=this,h,k={},g=l?$.fn:$,n=arguments,i=4,f=n[1],j=n[2],p=n[3];if(typeof f!=="string"){i--;f=l=0;j=n[1];p=n[2]}if(l){h=m.eq(0);h.data(l,k=h.data(l)||{})}else{if(f){k=a[f]||(a[f]={})}}k.id&&clearTimeout(k.id);delete k.id;function e(){if(l){h.removeData(l)}else{if(f){delete a[f]}}}function o(){k.id=setTimeout(function(){k.fn()},j)}if(p){k.fn=function(q){if(typeof p==="string"){p=g[p]}p.apply(m,d.call(n,i))===true&&!q?o():e()};o()}else{if(k.fn){j===undefined?e():k.fn(j===false);return true}else{e()}}}})(jQuery);
-
-
+var nIntervId;
 
 (function($) {
 
@@ -22,6 +12,71 @@
 		$('#shopping_cart_after_total').html('<span class="event_total_price"><img src="'+EEGlobals.plugin_url+'images/ajax-loader.gif"></span>');		
 	}
 
+	function event_total_price_blur_loop() {
+	
+		var event_total_price = $('#event_total_price').html();
+		
+		if ( $.isNumeric( event_total_price ) ) {
+			if ( event_total_price != '0.00' && event_total_price != NaN ) {
+				//alert( '251)  event_total_price: '+event_total_price );
+			
+				// no savings yet, so for now this is the orig price
+				var orig_total = event_total_price;
+				// what discounts are based on
+				var vlm_dscnt_factor = $('#vlm_dscnt_factor').val();
+				// what discounts are based on
+				var vlm_dscnt_amount = $('#vlm_dscnt_amount').val();
+				// what discounts are based on
+				var vlm_dscnt_type = $('#vlm_dscnt_type').val();
+				//alert( '279) vlm_dscnt_factor: '+vlm_dscnt_factor+'\n\vlm_dscnt_amount: '+vlm_dscnt_amount+'\n\vlm_dscnt_type: '+vlm_dscnt_type );
+
+				// is discount a fixed dollar value discount or percentage ?
+				if ( vlm_dscnt_type == 'vlm-dscnt-type-dollar' ) {
+					// subtract discount from total
+					event_total_price = event_total_price - vlm_dscnt_amount;
+				} else {
+					// percentage discount
+					event_total_price = event_total_price * (( 100 - vlm_dscnt_amount ) / 100 );
+				}
+				
+				// make it look like money
+				var discounted_total = parseFloat(event_total_price).toFixed(2);
+				var savings = orig_total - discounted_total;
+				var discount = savings.toFixed(2);
+				// is there a discount?
+				var process_vlm_dscnt = espresso_process_vlm_dscnt();
+				if ( process_vlm_dscnt == 'Y' && ! isNaN(discount) && ! isNaN(discounted_total) ) {
+
+					var msg = '<span class="event_total_price" style="clear:both; width:auto;">'+evd.msg+' ' + evd.cur_sign + '<span>'+discount+'</span></span>';
+					msg = msg+'<span class="event_total_price" style="clear:both; width:auto;">Total ' + evd.cur_sign + '<span>'+discounted_total+'</span></span>';
+				
+					// hide it, switch it, then fade it in... oh yeah that's nice
+					$('#shopping_cart_after_total').hide().html(msg).fadeIn();
+
+				} else {
+					// remove discount
+					$('#shopping_cart_after_total').html('')
+					discount = 0;
+				}
+				if ( discounted_total != NaN && parseFloat(discounted_total) <= parseFloat(orig_total) && discounted_total != '0.00' ) {			
+					// it's good? then store it in the session'
+					espresso_store_discount_in_session( discount );
+					$('#spinner').fadeOut('fast');
+					clearInterval(nIntervId);
+				}
+			}
+		}
+		
+	}
+
+	function event_total_price_blur() {
+				
+		// show spinny thing
+		vlm_dscnt_loading();
+		clearInterval(nIntervId);
+		nIntervId = setInterval(event_total_price_blur_loop, 250);
+
+   }
 
 
 
@@ -229,142 +284,7 @@
 		}
 	}
 
-
-
-
-
-	$('#event_total_price').on( 'focus blur change', function() {
-		event_total_price_blur();
-	});
-
-
-
-	function event_total_price_blur() {
-
-	    // Check to see if the counter has been initialized
-	    if ( typeof event_total_price_blur.counter == 'undefined' ) {
-	        event_total_price_blur.counter = 0;
-	    }
-		
-		var event_total_price = $('#event_total_price').html();
-		
-		if ( $.isNumeric( event_total_price )) {
-
-			// is there a discount?
-			var process_vlm_dscnt = espresso_process_vlm_dscnt();
-			
-			 // YEAH ???
-//			if ( process_vlm_dscnt == 'Y' ) {
-				
-				// show spinny thing
-				vlm_dscnt_loading();
-					
-				// wait a second for other ajax stuff to fire - is this hacky or what?
-				$.doTimeout( 1250, function() {
-				
-					// get the cart total
-					var event_total_price_html = $('#event_total_price').html()
-					event_total_price_html = $.trim( event_total_price_html );
-					var event_total_price = parseFloat(event_total_price_html);
-					
-					// if cart total isn't done calculating, drive around in circles
-					while ( event_total_price == NaN ) {
-						// then every 1/4 second
-						$.doTimeout( 250, function() {
-							// check cart total again
-							event_total_price_html = $('#event_total_price').html();
-							event_total_price = parseFloat(event_total_price_html);
-						});
-					}
-					
-					// if price is not zero
-					if ( event_total_price != '0.00' && event_total_price != NaN ) {
-					//alert( '251)  event_total_price: '+event_total_price );
-					
-						// no savings yet, so for now this is the orig price
-						var orig_total = event_total_price;
-						// what discounts are based on
-						var vlm_dscnt_factor = $('#vlm_dscnt_factor').val();
-						// what discounts are based on
-						var vlm_dscnt_amount = $('#vlm_dscnt_amount').val();
-						// what discounts are based on
-						var vlm_dscnt_type = $('#vlm_dscnt_type').val();
-						//alert( '279) vlm_dscnt_factor: '+vlm_dscnt_factor+'\n\vlm_dscnt_amount: '+vlm_dscnt_amount+'\n\vlm_dscnt_type: '+vlm_dscnt_type );
-
-						// is discount a fixed dollar value discount or percentage ?
-						if ( vlm_dscnt_type == 'vlm-dscnt-type-dollar' ) {
-							// subtract discount from total
-							event_total_price = event_total_price - vlm_dscnt_amount;
-						} else {
-							// percentage discount
-							event_total_price = event_total_price * (( 100 - vlm_dscnt_amount ) / 100 );
-						}
-						
-						// make it look like money
-						var discounted_total = parseFloat(event_total_price).toFixed(2);
-						var savings = orig_total - discounted_total;
-						var discount = savings.toFixed(2);
-						
-						//alert( 'discounted_total: '+discounted_total+'\n\discount: '+discount );
-
-						if ( process_vlm_dscnt == 'Y' && ! isNaN(discount) && ! isNaN(discounted_total) ) {
-
-							// put together discount html
-//							var msg = '<span class="event_total_price" style="clear:both;">'+discount+'</span>';
-//							msg = msg+'<span class="event_total_price" style="width:auto;">'+evd.msg+' ' + evd.cur_sign + '</span>';
-//							msg = msg+'<span class="event_total_price" style="clear:both;" >'+discounted_total+'</span>';
-//							msg = msg+'<span class="event_total_price" style="width:auto;">Total ' + evd.cur_sign + '</span>';
-							
-							var msg = '<span class="event_total_price" style="clear:both; width:auto;">'+evd.msg+' ' + evd.cur_sign + '<span>'+discount+'</span></span>';
-							msg = msg+'<span class="event_total_price" style="clear:both; width:auto;">Total ' + evd.cur_sign + '<span>'+discounted_total+'</span></span>';
-							
-							// style="color: #333333; float: right; font-size: 25px; padding: 5px;"
-							
-							// hide it, switch it, then fade it in... oh yeah that's nice
-							$('#shopping_cart_after_total').hide().html(msg).fadeIn();
-
-						} else {
-							// remove discount
-							$('#shopping_cart_after_total').html('')
-							discount = 0;
-						}
-
-						// final check to make sure discounted total has been calculated correctly
-						if ( event_total_price_blur.counter > 3 ) {
-							$('#spinner').fadeOut('fast');
-							return false;
-						} else if ( discounted_total == NaN || parseFloat(discounted_total) > parseFloat(orig_total) || discounted_total == '0.00' ) {			
-							event_total_price_blur.counter++;				
-							// if not then run the whole show again
-							event_total_price_blur();
-						} else {
-							// it's good? then store it in the session'
-							espresso_store_discount_in_session( discount );
-							$('#spinner').fadeOut('fast');
-						}
-						
-					} else {
-						// hmmmm... MER ajax still not done?? do it again.
-						event_total_price_blur();
-					}
-					
-				});	
-					 		
- 		}
-
-   }
-
-
-
-
-
-
 	function trigger_total_event_cost_update(){
-		// wait a bit
-//		$.doTimeout( 1500, function() {
-
-			// show spinny thing
-			//vlm_dscnt_loading();
 				
 			// need a quick way to toggle whether to recheck discount 
 			if ( $('#process_vlm_dscnt').val() == 'T' ) {
@@ -376,8 +296,7 @@
 			}
 
 			// then trigger it
-			event_total_price_blur();
-//		});		
+			event_total_price_blur();		
 	}
 
 
@@ -387,8 +306,6 @@
 	$('#event_espresso_refresh_total').on( 'click', function(){
 		// click??? trigger it 
 		trigger_total_event_cost_update();
-//		event_total_price_blur();
-//		return false;
     });
 
 
@@ -399,8 +316,6 @@
 	$('.price_id, #event_espresso_coupon_code').on( 'change', function(){
 		// click??? trigger it 
 		trigger_total_event_cost_update();
-//		event_total_price_blur();
-//		return false;
     });
 	
 	
@@ -420,8 +335,6 @@
 		// initialize the cart	
 		kickstart();
 	}
-	
-	//$('#event_total_price').css({ 'padding-right' : '5px' });
 
 	
 })(jQuery);
