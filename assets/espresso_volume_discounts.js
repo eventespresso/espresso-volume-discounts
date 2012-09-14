@@ -9,73 +9,80 @@ var nIntervId;
 
 
 	function vlm_dscnt_loading() {
-		$('#shopping_cart_after_total').html('<span class="event_total_price"><img src="'+EEGlobals.plugin_url+'images/ajax-loader.gif"></span>');		
+		if ( $('#shopping_cart_after_total').html() == '' ) {
+			$('#shopping_cart_after_total').html('<span class="event_total_price"><img src="'+EEGlobals.plugin_url+'images/ajax-loader.gif"></span>');		
+		}		
 	}
 
-	function event_total_price_blur_loop() {
+	function apply_discount_to_total_price() {
 	
 		var event_total_price = $('#event_total_price').html();
+		event_total_price = parseFloat(event_total_price);
+
+		if ( $.isNumeric( event_total_price ) && event_total_price != NaN  ) {
+			//alert( '23)  event_total_price: '+event_total_price );
 		
-		if ( $.isNumeric( event_total_price ) ) {
-			if ( event_total_price != '0.00' && event_total_price != NaN ) {
-				//alert( '251)  event_total_price: '+event_total_price );
-			
-				// no savings yet, so for now this is the orig price
-				var orig_total = event_total_price;
-				// what discounts are based on
-				var vlm_dscnt_factor = $('#vlm_dscnt_factor').val();
-				// what discounts are based on
-				var vlm_dscnt_amount = $('#vlm_dscnt_amount').val();
-				// what discounts are based on
-				var vlm_dscnt_type = $('#vlm_dscnt_type').val();
-				//alert( '279) vlm_dscnt_factor: '+vlm_dscnt_factor+'\n\vlm_dscnt_amount: '+vlm_dscnt_amount+'\n\vlm_dscnt_type: '+vlm_dscnt_type );
+			// no savings yet, so for now this is the orig price
+			var orig_total = event_total_price;
+			// what discounts are based on
+			var vlm_dscnt_factor = $('#vlm_dscnt_factor').val();
+			// what discounts are based on
+			var vlm_dscnt_amount = $('#vlm_dscnt_amount').val();
+			// what discounts are based on
+			var vlm_dscnt_type = $('#vlm_dscnt_type').val();
+			//alert( '279) vlm_dscnt_factor: '+vlm_dscnt_factor+'\n\vlm_dscnt_amount: '+vlm_dscnt_amount+'\n\vlm_dscnt_type: '+vlm_dscnt_type );
 
-				// is discount a fixed dollar value discount or percentage ?
-				if ( vlm_dscnt_type == 'vlm-dscnt-type-dollar' ) {
-					// subtract discount from total
-					event_total_price = event_total_price - vlm_dscnt_amount;
-				} else {
-					// percentage discount
-					event_total_price = event_total_price * (( 100 - vlm_dscnt_amount ) / 100 );
-				}
-				
-				// make it look like money
-				var discounted_total = parseFloat(event_total_price).toFixed(2);
-				var savings = orig_total - discounted_total;
-				var discount = savings.toFixed(2);
-				// is there a discount?
-				var process_vlm_dscnt = espresso_process_vlm_dscnt();
-				if ( process_vlm_dscnt == 'Y' && ! isNaN(discount) && ! isNaN(discounted_total) ) {
-
-					var msg = '<span class="event_total_price" style="clear:both; width:auto;">'+evd.msg+' ' + evd.cur_sign + '<span>'+discount+'</span></span>';
-					msg = msg+'<span class="event_total_price" style="clear:both; width:auto;">Total ' + evd.cur_sign + '<span>'+discounted_total+'</span></span>';
-				
-					// hide it, switch it, then fade it in... oh yeah that's nice
-					$('#shopping_cart_after_total').hide().html(msg).fadeIn();
-
-				} else {
-					// remove discount
-					$('#shopping_cart_after_total').html('')
-					discount = 0;
-				}
-				if ( discounted_total != NaN && parseFloat(discounted_total) <= parseFloat(orig_total) && discounted_total != '0.00' ) {			
-					// it's good? then store it in the session'
-					espresso_store_discount_in_session( discount );
-					$('#spinner').fadeOut('fast');
-					clearInterval(nIntervId);
-				}
+			// is discount a fixed dollar value discount or percentage ?
+			if ( vlm_dscnt_type == 'vlm-dscnt-type-dollar' ) {
+				// subtract discount from total
+				event_total_price = event_total_price - vlm_dscnt_amount;
+			} else {
+				// percentage discount
+				event_total_price = event_total_price * (( 100 - vlm_dscnt_amount ) / 100 );
 			}
+			event_total_price = parseFloat(event_total_price).toFixed(2);
+			// make it look like money
+			var discounted_total = event_total_price;
+			var savings = orig_total - discounted_total;
+			var discount = savings.toFixed(2);
+			// is there a discount?
+			var process_vlm_dscnt = espresso_process_vlm_dscnt();
+			if ( process_vlm_dscnt == 'Y' && ! isNaN(discount) && ! isNaN(discounted_total) && event_total_price > 0 ) {
+
+				var msg = '<span class="event_total_price" style="clear:both; width:auto;">'+evd.msg+' ' + evd.cur_sign + '<span>'+discount+'</span></span>';
+				msg = msg+'<span class="event_total_price" style="clear:both; width:auto;">Total ' + evd.cur_sign + '<span>'+discounted_total+'</span></span>';
+			
+				// hide it, switch it, then fade it in... oh yeah that's nice
+				$('#shopping_cart_after_total').hide().html(msg).fadeIn();
+
+			} else {
+				// remove discount
+				$('#shopping_cart_after_total').html('')
+				discount = 0;
+			}
+			
+			if ( discounted_total != NaN && parseFloat(discounted_total) <= parseFloat(orig_total) && discounted_total != '0.00' ) {			
+				// it's good? then store it in the session'
+				espresso_store_discount_in_session( discount );
+			}
+			
+			$('#spinner').fadeOut('fast');
+			clearTimeout( waitingForAjax );
+			
+		} else {
+			event_total_price_blur();
 		}
-		
+
 	}
 
-	function event_total_price_blur() {
-				
+
+
+
+
+	function event_total_price_blur() {				
 		// show spinny thing
 		vlm_dscnt_loading();
-		clearInterval(nIntervId);
-		nIntervId = setInterval(event_total_price_blur_loop, 250);
-
+		var waitingForAjax = setTimeout( apply_discount_to_total_price, 250 );
    }
 
 
@@ -207,21 +214,33 @@ var nIntervId;
 			// is it in our list of categories that get discounts?
 			if( jQuery.inArray( event_cat, vlm_dscnt_categories) > -1 || vlm_dscnt_categories == 'A' ) {
 				//alert( event_cat+' is in '+vlm_dscnt_categories );
-				//alert( '132) vlm_dscnt_cntr: '+vlm_dscnt_cntr+'\n\vlm_dscnt_cntr_total: '+vlm_dscnt_cntr_total );
+				//alert( '210) vlm_dscnt_cntr: '+vlm_dscnt_cntr+'\n\vlm_dscnt_cntr_total: '+vlm_dscnt_cntr_total );
 						
 				// is discount based on cart total ?
 				if ( vlm_dscnt_factor == 'fctr_dollar_value' ) {
 
+					vlm_dscnt_cntr = 0;
+					
 					// grab the prices
 					var prices = $( this ).find( 'td.price' );
-					vlm_dscnt_cntr = 0;
 					prices.each(function () {
-						price = $( this ).html();
-						quantity = $( this ).siblings( 'td.selection' ).children( '.price_id' ).val();
+						
+						var price = $( this ).html();
+						var price_selector = $( this ).next( 'td.selection' ).children( '.price_id' );
+							
+						if ( price_selector.prop('type') == 'select-one' ){
+							var quantity = price_selector.val();
+						} else if ( price_selector.prop('type') == 'radio' && price_selector.is(':checked') ){
+							var quantity = 1;
+						} else {
+							var quantity = 0;
+						}
+
 						// remove the currency sign
 						price = price.replace( evd.cur_sign, '');
 						// parse values as floats
 						vlm_dscnt_cntr += parseFloat( price ) * quantity;
+						//alert( '226) vlm_dscnt_cntr = ' + vlm_dscnt_cntr +'\n\price: '+parseFloat( price ) +'\n\quantity: '+quantity );
 					});
 										
 	
@@ -238,14 +257,14 @@ var nIntervId;
 
 
 				}
-				//alert( 'vlm_dscnt_cntr = ' + vlm_dscnt_cntr );
+				//alert( '243) vlm_dscnt_cntr = ' + vlm_dscnt_cntr );
 				// if counter value is a number
 				if ( vlm_dscnt_cntr != NaN ) {
 					// add it up
 					vlm_dscnt_cntr_total = parseInt( vlm_dscnt_cntr_total ) + parseInt( vlm_dscnt_cntr );
 				}		
 						
-				//alert( '164) vlm_dscnt_cntr: '+vlm_dscnt_cntr+'\n\vlm_dscnt_cntr_total: '+vlm_dscnt_cntr_total );
+				//alert( '250) vlm_dscnt_cntr: '+vlm_dscnt_cntr+'\n\vlm_dscnt_cntr_total: '+vlm_dscnt_cntr_total );
 
 			}
 	
@@ -313,10 +332,11 @@ var nIntervId;
 
 
 
-	$('.price_id, #event_espresso_coupon_code').on( 'change', function(){
-		// click??? trigger it 
+	$('.price_id, #event_espresso_coupon_code, #event_espresso_groupon_code').on( 'change', function(){
+		// change??? trigger it 
 		trigger_total_event_cost_update();
     });
+
 	
 	
 	
