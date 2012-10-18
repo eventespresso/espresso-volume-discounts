@@ -39,13 +39,13 @@ class EE_VLM_DSCNT {
 
  	// instance of the VLM_DSCNT object
 	private static $_instance = NULL;
-
 	// an array for storing settings options
 	var $_settings_options = array();  
-
-
 	// the total number of class credites
 	var $_class_credits = 0;
+	// wp admin page name
+	private $_vlm_dscnt_settings_page = FALSE;
+
 
 
 
@@ -262,7 +262,7 @@ class EE_VLM_DSCNT {
 														);
 		}
 		
-		$new_settings_page = add_submenu_page(
+		$this->_vlm_dscnt_settings_page = add_submenu_page(
 																					'event_espresso',
 																					__('Event Espresso - Volume Discount', 'event_espresso'), 
 																					__('Volume Discounts', 'event_espresso'), 
@@ -271,12 +271,8 @@ class EE_VLM_DSCNT {
 																					array( &$this, 'admin_settings_page' )
 																				);		
 										
-		// add contextual help
-		if ( $new_settings_page ) {
-			add_contextual_help( $new_settings_page, $this->_settings_options['vlm_dscnt_contextual_help'] );
-		}
 		// load css and js resources
-		add_action( 'load-'. $new_settings_page, array( &$this, '_load_settings_resources' ) );
+		add_action( 'load-'. $this->_vlm_dscnt_settings_page, array( &$this, '_load_settings_resources' ) );
 		
 	}	
 
@@ -898,6 +894,10 @@ class EE_VLM_DSCNT {
 	*/		
 	public function admin_settings_page() {
 
+		// add contextual help
+		if ( $this->_vlm_dscnt_settings_page ) {
+			get_current_screen()->add_help_tab( $this->_vlm_dscnt_settings_page, $this->_settings_options['vlm_dscnt_contextual_help'] );
+		}
 		$template_args = array();
 		$path_to_file = VLM_DSCNT_PATH . 'volume_discounts_admin_settings.template.php';
 		$this->display_template( $path_to_file, $template_args );
@@ -930,26 +930,28 @@ class EE_VLM_DSCNT {
 	 */
 	function admin_msgs() {
 		
-		// check for our settings page - need this in conditional further down
-		$settings_pg = strpos($_GET['page'], VLM_DSCNT_PG_SLUG);
-		// collect setting errors/notices: //http://codex.wordpress.org/Function_Reference/get_settings_errors
-		$set_errors = get_settings_errors(); 
-		
-		//display admin message only for the admin to see, only on our settings page and only when setting errors/notices are returned!	
-		if ( current_user_can ('manage_options') && $settings_pg !== FALSE && ! empty($set_errors) ) {
-	
-			// have our settings succesfully been updated? 
-			if ( $set_errors[0]['code'] == 'settings_updated' && isset($_GET['settings-updated']) ) {
-				$this->show_msg("<p>" . $set_errors[0]['message'] . "</p>", 'updated');
+		if ( isset( $_GET['page'] )) {
+			// check for our settings page - need this in conditional further down
+			$settings_pg = strpos($_GET['page'], VLM_DSCNT_PG_SLUG);
+			// collect setting errors/notices: //http://codex.wordpress.org/Function_Reference/get_settings_errors
+			$set_errors = get_settings_errors(); 
 			
-			// have errors been found?
-			} else {
-				// there maybe more than one so run a foreach loop.
-				foreach( $set_errors as $set_error ) {
-					// set the title attribute to match the error "setting title" - need this in js file
-					$this->show_msg("<p class='setting-error-message' title='" . $set_error['setting'] . "'>" . $set_error['message'] . "</p>", 'error');
+			//display admin message only for the admin to see, only on our settings page and only when setting errors/notices are returned!	
+			if ( current_user_can ('manage_options') && $settings_pg !== FALSE && ! empty($set_errors) ) {
+		
+				// have our settings succesfully been updated? 
+				if ( $set_errors[0]['code'] == 'settings_updated' && isset($_GET['settings-updated']) ) {
+					$this->show_msg("<p>" . $set_errors[0]['message'] . "</p>", 'updated');
+				
+				// have errors been found?
+				} else {
+					// there maybe more than one so run a foreach loop.
+					foreach( $set_errors as $set_error ) {
+						// set the title attribute to match the error "setting title" - need this in js file
+						$this->show_msg("<p class='setting-error-message' title='" . $set_error['setting'] . "'>" . $set_error['message'] . "</p>", 'error');
+					}
 				}
-			}
+			}			
 		}
 	}
 
