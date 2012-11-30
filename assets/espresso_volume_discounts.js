@@ -1,4 +1,5 @@
 var nIntervId;
+var waitingForAjax;
 
 (function($) {
 
@@ -82,7 +83,7 @@ var nIntervId;
 	function event_total_price_blur() {				
 		// show spinny thing
 		vlm_dscnt_loading();
-		var waitingForAjax = setTimeout( apply_discount_to_total_price, 250 );
+		waitingForAjax = setTimeout( apply_discount_to_total_price, 250 );
    }
 
 
