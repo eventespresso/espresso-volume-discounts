@@ -1,11 +1,19 @@
 var nIntervId;
 var waitingForAjax;
+var vDebug = true;		//  true		false
 
 (function($) {
 
 	if ( $('#spinner').height() == null ) {
 		var spinner = '<img id="spinner" style="display:none;" src="'+EEGlobals.plugin_url+'images/ajax-loader.gif">';
 		$('#event_total_price').after( spinner );
+	}
+	
+	
+	function display_vDebug( vDebugMsg ) {
+		if ( vDebug ) {
+			$('#event_espresso_shopping_cart').append( vDebugMsg +"<br /><br />" );
+		}		
 	}
 
 
@@ -21,7 +29,8 @@ var waitingForAjax;
 		event_total_price = parseFloat(event_total_price);
 
 		if ( $.isNumeric( event_total_price ) && event_total_price != NaN  ) {
-			//alert( '23)  event_total_price: '+event_total_price );
+		
+			display_vDebug( (new Error).lineNumber + ')  event_total_price: '+event_total_price );
 		
 			// no savings yet, so for now this is the orig price
 			var orig_total = event_total_price;
@@ -31,7 +40,7 @@ var waitingForAjax;
 			var vlm_dscnt_amount = $('#vlm_dscnt_amount').val();
 			// what discounts are based on
 			var vlm_dscnt_type = $('#vlm_dscnt_type').val();
-			//alert( '279) vlm_dscnt_factor: '+vlm_dscnt_factor+'\n\vlm_dscnt_amount: '+vlm_dscnt_amount+'\n\vlm_dscnt_type: '+vlm_dscnt_type );
+			display_vDebug( (new Error).lineNumber + ') vlm_dscnt_factor: '+vlm_dscnt_factor+'<br />' + 'vlm_dscnt_amount: '+vlm_dscnt_amount+'<br />' + 'vlm_dscnt_type: '+vlm_dscnt_type );
 
 			// is discount a fixed dollar value discount or percentage ?
 			if ( vlm_dscnt_type == 'vlm-dscnt-type-dollar' ) {
@@ -105,12 +114,12 @@ var waitingForAjax;
 						data: params,
 						dataType: "json",
 						beforeSend: function(){
-							//alert( params.toSource() );
+							//display_vDebug( (new Error).lineNumber + ') ' + params.toSource() );
 						},
 						success: function(response){
 						
 							var new_grand_total = response.grand_total;
-							//alert( 'new_grand_total = ' + new_grand_total );
+							display_vDebug( (new Error).lineNumber + ') new_grand_total = ' + new_grand_total );
 	
 							$.ajax({
 									        type: "POST",
@@ -121,10 +130,10 @@ var waitingForAjax;
 														},
 											dataType: "json",
 											success: function(response){
-												//alert(response.success);
+												//display_vDebug( (new Error).lineNumber + ') ' + response.success);
 											},
 											error: function(response) {
-												//alert(response.error);
+												//display_vDebug( (new Error).lineNumber + ') ' + response.error);
 											}			
 									});	
 											
@@ -135,7 +144,7 @@ var waitingForAjax;
 	
 						},
 						error: function(response) {
-							//alert("Error.");
+							display_vDebug( (new Error).lineNumber + ') Error.');
 						}			
 	
 				});			
@@ -155,12 +164,7 @@ var waitingForAjax;
 			'vlm_dscnt' : vlm_dscnt
 		};
 
-		$.getJSON( evd.ajaxurl, data, function(response) {
-/*			if ( response ) {
-				// trigger it ASAP
-				alert( 'vlm_dscnt : ' + response.vlm_dscnt );
-			}*/
-		});
+		$.getJSON( evd.ajaxurl, data );
 
 	}
 
@@ -186,10 +190,11 @@ var waitingForAjax;
 		// price_id selector
 		var priceID = false;
 		
-		//alert( 'vlm_dscnt_factor = ' + vlm_dscnt_factor + '\n' + 'vlm_dscnt_threshold = ' + vlm_dscnt_threshold + '\n' + 'process_vlm_dscnt = ' + process_vlm_dscnt + '\n' + 'vlm_dscnt_categories = ' + vlm_dscnt_categories );
+		display_vDebug( (new Error).lineNumber + ') vlm_dscnt_factor = ' + vlm_dscnt_factor + '<br />' + 'vlm_dscnt_threshold = ' + vlm_dscnt_threshold + '<br />' + 'process_vlm_dscnt = ' + process_vlm_dscnt + '<br />' + 'vlm_dscnt_categories = ' + vlm_dscnt_categories );
 
 		// cycle through all of the events in the cart
 		$('.multi_reg_cart_block').each(function () {
+			display_vDebug( (new Error).lineNumber + ') ' + $( this ).find( '.event_title' ).html() );
 			// total tickets for this event
 			var totalTickets = 0;
 			// all price selectors for this event
@@ -200,22 +205,24 @@ var waitingForAjax;
 				if ( $( this ).is('select')) {
 					// add number of selected tickets to total
 					totalTickets += parseInt( $( this ).val() );
-				} 
+				} else {
+					totalTickets++;
+				}
 			});
-			// set counters for events using dropdowns for number of tickets 
-			$( this ).find( '.vlm_dscnt_cntr' ).val( parseInt( totalTickets ));
+			display_vDebug( (new Error).lineNumber + ') totalTickets = '+totalTickets );
 
 			// category id for this event
 			var event_cat = $( this ).find( '.vlm_dscnt_cat' ).val();	
 			if ( event_cat == undefined || event_cat == '' ) {
 				event_cat = -1;
 			}
-			//alert( 'event_cat = '+event_cat );
+			display_vDebug( (new Error).lineNumber + ') event_cat = '+event_cat );
 		
 			// is it in our list of categories that get discounts?
-			if( jQuery.inArray( event_cat, vlm_dscnt_categories) > -1 || vlm_dscnt_categories == 'A' ) {
-				//alert( event_cat+' is in '+vlm_dscnt_categories );
-				//alert( '210) vlm_dscnt_cntr: '+vlm_dscnt_cntr+'\n\vlm_dscnt_cntr_total: '+vlm_dscnt_cntr_total );
+			if(( jQuery.inArray( event_cat, vlm_dscnt_categories )) > -1 || vlm_dscnt_categories == 'A' ) {
+			
+				display_vDebug( (new Error).lineNumber + ') ' + event_cat+' is in '+vlm_dscnt_categories );
+				display_vDebug( (new Error).lineNumber + ') vlm_dscnt_cntr: '+vlm_dscnt_cntr+'<br />' + 'vlm_dscnt_cntr_total: '+vlm_dscnt_cntr_total );
 						
 				// is discount based on cart total ?
 				if ( vlm_dscnt_factor == 'fctr_dollar_value' ) {
@@ -230,7 +237,7 @@ var waitingForAjax;
 						var price_selector = $( this ).next( 'td.selection' ).children( '.price_id' );
 							
 						if ( price_selector.prop('type') == 'select-one' ){
-							var quantity = price_selector.val();
+							var quantity = parseInt( price_selector.val() );
 						} else if ( price_selector.prop('type') == 'radio' && price_selector.is(':checked') ){
 							var quantity = 1;
 						} else {
@@ -241,7 +248,7 @@ var waitingForAjax;
 						price = price.replace( evd.cur_sign, '');
 						// parse values as floats
 						vlm_dscnt_cntr += parseFloat( price ) * quantity;
-						//alert( '226) vlm_dscnt_cntr = ' + vlm_dscnt_cntr +'\n\price: '+parseFloat( price ) +'\n\quantity: '+quantity );
+						display_vDebug( (new Error).lineNumber + ') vlm_dscnt_cntr = ' + vlm_dscnt_cntr +'<br />' + 'price: '+parseFloat( price ) +'<br />' + 'quantity: '+quantity );
 					});
 										
 	
@@ -252,20 +259,24 @@ var waitingForAjax;
 				} else {
 	
 					// grab whatever value we are counting
-					vlm_dscnt_cntr = $( this ).find( '.vlm_dscnt_cntr' ).val();
+					var vlm_dscnt_cntr_init = $( this ).find( '.vlm_dscnt_cntr' ).val();
+					display_vDebug( (new Error).lineNumber + ') vlm_dscnt_cntr_init = ' + vlm_dscnt_cntr_init );
+					// set counters for events using dropdowns for number of tickets 
+					vlm_dscnt_cntr_init = parseFloat( vlm_dscnt_cntr_init ) * parseInt( totalTickets );
+					display_vDebug( (new Error).lineNumber + ') vlm_dscnt_cntr_init = ' + vlm_dscnt_cntr_init );
 					// parse values as integers
-					vlm_dscnt_cntr = parseInt( vlm_dscnt_cntr );
-
-
+					vlm_dscnt_cntr = parseFloat( vlm_dscnt_cntr_init );
+					display_vDebug( (new Error).lineNumber + ') vlm_dscnt_cntr = ' + vlm_dscnt_cntr );
+				
 				}
-				//alert( '243) vlm_dscnt_cntr = ' + vlm_dscnt_cntr );
+				display_vDebug( (new Error).lineNumber + ') vlm_dscnt_cntr = ' + vlm_dscnt_cntr );
 				// if counter value is a number
 				if ( vlm_dscnt_cntr != NaN ) {
 					// add it up
-					vlm_dscnt_cntr_total = parseInt( vlm_dscnt_cntr_total ) + parseInt( vlm_dscnt_cntr );
+					vlm_dscnt_cntr_total += parseFloat( vlm_dscnt_cntr_total ) + parseFloat( vlm_dscnt_cntr );
 				}		
 						
-				//alert( '250) vlm_dscnt_cntr: '+vlm_dscnt_cntr+'\n\vlm_dscnt_cntr_total: '+vlm_dscnt_cntr_total );
+				display_vDebug( (new Error).lineNumber + ') vlm_dscnt_cntr: '+vlm_dscnt_cntr+'<br />' + 'vlm_dscnt_cntr_total: '+vlm_dscnt_cntr_total );
 
 			}
 	
@@ -274,7 +285,7 @@ var waitingForAjax;
 		// set the counter total
 		$('#vlm_dscnt_cntr_total').val( vlm_dscnt_cntr_total );
 
-		//alert( 'vlm_dscnt_cntr_total: '+vlm_dscnt_cntr_total+'\nvlm_dscnt_threshold : '+vlm_dscnt_threshold );
+		display_vDebug( (new Error).lineNumber + ') vlm_dscnt_cntr_total: '+vlm_dscnt_cntr_total+'<br />' + 'vlm_dscnt_threshold : '+vlm_dscnt_threshold );
 
 		// has the volume discount counter surpassed the threshold ???
 		if ( vlm_dscnt_cntr_total >= vlm_dscnt_threshold ) {
