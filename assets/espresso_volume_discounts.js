@@ -1,8 +1,12 @@
 var nIntervId;
 var waitingForAjax;
-var vDebug = true;		//  true		false
+var vDebug = false;		//  true		false
 
 (function($) {
+
+	if ( vDebug ) {
+		$('#event_espresso_shopping_cart').append( '<div id="volume-discounts-debug"></div>' );
+	}
 
 	if ( $('#spinner').height() == null ) {
 		var spinner = '<img id="spinner" style="display:none;" src="'+EEGlobals.plugin_url+'images/ajax-loader.gif">';
@@ -12,7 +16,8 @@ var vDebug = true;		//  true		false
 	
 	function display_vDebug( vDebugMsg ) {
 		if ( vDebug ) {
-			$('#event_espresso_shopping_cart').append( vDebugMsg +"<br /><br />" );
+			$('#volume-discounts-debug').append( vDebugMsg +"<br /><br />" );
+			console.log( vDebugMsg +"<br /><br />" );
 		}		
 	}
 
@@ -92,6 +97,7 @@ var vDebug = true;		//  true		false
 	function event_total_price_blur() {				
 		// show spinny thing
 		vlm_dscnt_loading();
+		$('#volume-discounts-debug').html('');
 		waitingForAjax = setTimeout( apply_discount_to_total_price, 250 );
    }
 
@@ -197,19 +203,6 @@ var vDebug = true;		//  true		false
 			display_vDebug( (new Error).lineNumber + ') ' + $( this ).find( '.event_title' ).html() );
 			// total tickets for this event
 			var totalTickets = 0;
-			// all price selectors for this event
-			var priceSelects = $( this ).find( '.price_id' );
-			// loop thru price selectors
-			priceSelects.each(function () {
-				// verify it's a dropdown'
-				if ( $( this ).is('select')) {
-					// add number of selected tickets to total
-					totalTickets += parseInt( $( this ).val() );
-				} else {
-					totalTickets++;
-				}
-			});
-			display_vDebug( (new Error).lineNumber + ') totalTickets = '+totalTickets );
 
 			// category id for this event
 			var event_cat = $( this ).find( '.vlm_dscnt_cat' ).val();	
@@ -258,6 +251,19 @@ var vDebug = true;		//  true		false
 				// or is discount based on adding up registrations or meta data ?	
 				} else {
 	
+					// all price selectors for this event
+					var priceSelects = $( this ).find( '.price_id' );
+					// loop thru price selectors
+					priceSelects.each(function () {
+						// verify it's a dropdown'
+						if ( $( this ).is('select')) {
+							// add number of selected tickets to total
+							totalTickets += parseInt( $( this ).val() );
+						} else {
+							totalTickets++;
+						}
+					});
+					display_vDebug( (new Error).lineNumber + ') totalTickets = '+totalTickets );	
 					// grab whatever value we are counting
 					var vlm_dscnt_cntr_init = $( this ).find( '.vlm_dscnt_cntr' ).val();
 					display_vDebug( (new Error).lineNumber + ') vlm_dscnt_cntr_init = ' + vlm_dscnt_cntr_init );
@@ -269,11 +275,12 @@ var vDebug = true;		//  true		false
 					display_vDebug( (new Error).lineNumber + ') vlm_dscnt_cntr = ' + vlm_dscnt_cntr );
 				
 				}
+			
 				display_vDebug( (new Error).lineNumber + ') vlm_dscnt_cntr = ' + vlm_dscnt_cntr );
 				// if counter value is a number
 				if ( vlm_dscnt_cntr != NaN ) {
 					// add it up
-					vlm_dscnt_cntr_total += parseFloat( vlm_dscnt_cntr_total ) + parseFloat( vlm_dscnt_cntr );
+					vlm_dscnt_cntr_total += parseFloat( vlm_dscnt_cntr );
 				}		
 						
 				display_vDebug( (new Error).lineNumber + ') vlm_dscnt_cntr: '+vlm_dscnt_cntr+'<br />' + 'vlm_dscnt_cntr_total: '+vlm_dscnt_cntr_total );

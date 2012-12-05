@@ -47,6 +47,8 @@ class EE_VLM_DSCNT {
 	private $_vlm_dscnt_settings_page = FALSE;
 	// counter
 	private $_vlm_dscnt_cntr = 0;
+	// volume discount event categories
+	private $_vlm_dscnt_cats = array();
 
 
 
@@ -62,7 +64,6 @@ class EE_VLM_DSCNT {
 		if ( self::$_instance === NULL  or ! is_object( self::$_instance ) or ! is_a( self::$_instance, __CLASS__ )) {
 			self::$_instance = new self();
 		}
-		echo '<h3>'. __CLASS__ . '->' . __FUNCTION__ . ' <br /><span style="font-size:10px;font-weight:normal;">' . __FILE__ . '<br />line no: ' . __LINE__ . '</span></h3>';
 		return self::$_instance;
 	}
 	
@@ -78,6 +79,9 @@ class EE_VLM_DSCNT {
 	*/	
 	private function __construct() {
 		
+		if ( ! defined( 'EVENT_ESPRESSO_VERSION' ))  {
+			return;
+		}
 		// prefix
 	    define('VLM_DSCNT', 'vlmdscnt');  
 		// the settings page slug  
@@ -995,6 +999,13 @@ class EE_VLM_DSCNT {
 		
 		$this->_settings_options = get_option('espresso_volume_discounts');
 		
+		foreach ( $this->_settings_options['vlm-dscnt-categories-slct'] as $cat_id => $discount_cat ) {			
+			if ( $discount_cat == 'true' ) {
+				$this->_vlm_dscnt_cats[] = $cat_id;
+			}
+		}
+		//printr( $this->_vlm_dscnt_cats, '$this->_vlm_dscnt_cats  <br /><span style="font-size:10px;font-weight:normal;">' . __FILE__ . '<br />line no: ' . __LINE__ . '</span>', 'auto' );
+		
 		// start hooking
 		add_action( 'init', array( &$this, '_load_frontend_resources' ) );		
 		add_filter( 'filter_hook_espresso_shopping_cart_SQL_select', array( &$this, 'filter_shopping_cart_SQL_select' ), 1, 1 );
@@ -1051,6 +1062,14 @@ class EE_VLM_DSCNT {
 	*		@return 	echo string
 	*/	
 	public function hook_add_to_multi_reg_cart_block( $event ) {	
+	
+		if ( isset( $this->_settings_options['vlm-dscnt-categories-slct'][$event->category_id] ) && $this->_settings_options['vlm-dscnt-categories-slct'][$event->category_id] == 'true' ) {
+			$this->_vlm_dscnt_cats[] = $event->category_id;
+		}
+		
+		printr( $this->_vlm_dscnt_cats, '$this->_vlm_dscnt_cats  <br /><span style="font-size:10px;font-weight:normal;">' . __FILE__ . '<br />line no: ' . __LINE__ . '</span>', 'auto' );
+		echo '<h4>$event->category_id : ' . $event->category_id . '  <br /><span style="font-size:10px;font-weight:normal;">' . __FILE__ . '<br />line no: ' . __LINE__ . '</span></h4>';
+		
 		
 		echo '
 			<input class="vlm_dscnt_cat" type="hidden" name="vlm_dscnt_cat['.$event->id.']" value="'.$event->category_id.'" />';
@@ -1093,55 +1112,6 @@ class EE_VLM_DSCNT {
 
 
 
-
-	/**
-	*		edit the SELECT and FROM portion of the SQL statement used to poulate the Shopping Cart
-	*		
-	*		@param 	string	$sql
-	*		@access 	public
-	*		@return 	string
-	*/	
-	function filter_shopping_cart_SQL_select ( $sql ) {
-	
-		global $wpdb;
-		
-//		printr( $this->_settings_options, 'settings_options' );
-
-		// check if individual categories are being targeted, by checking against ALL categories selected
-		if ( isset( $this->_settings_options['vlm-dscnt-categories-slct']['A'] ) && $this->_settings_options['vlm-dscnt-categories-slct']['A'] == 'true' ) {
-			return $sql;
-		}
-
-		if ( defined( EVENTS_DETAIL_TABLE )) {
-			$evnt_tbl = EVENTS_DETAIL_TABLE;
-		} else {
-			$evnt_tbl = $wpdb->prefix . 'events_detail';
-		}	
-		
-		if ( defined( EVENTS_CATEGORY_TABLE )) {
-			$cat_tbl = EVENTS_CATEGORY_TABLE;
-		} else {
-			$cat_tbl = $wpdb->prefix . 'events_category_detail';
-		}
-		
-		if ( defined( EVENTS_CATEGORY_REL_TABLE )) {
-			$evnt_cat_tbl = EVENTS_CATEGORY_REL_TABLE;
-		} else {
-			$evnt_cat_tbl = $wpdb->prefix . 'events_category_rel';
-		}
-	
-        $sql = 'SELECT e.*, r.cat_id, c.category_name';		
-        $sql .= ' FROM ' . $evnt_tbl . ' e';
-        $sql .= ' JOIN ' . $evnt_cat_tbl . ' r ON r.event_id = e.id ';
-        $sql .= ' JOIN ' . $cat_tbl . ' c ON  c.id = r.cat_id ';		
-	
-		return $sql;
-		
-	}
-
-
-
-
 	
 	/**
 	*		add content to the bottom of the shopping cart template after the total
@@ -1151,13 +1121,11 @@ class EE_VLM_DSCNT {
 	*/	
 	public function hook_shopping_cart_before_total() {	
 	
-		$vlm_dscnt_cats = '';
-		foreach ( $this->_settings_options['vlm-dscnt-categories-slct'] as $cat_id => $apply_dscnt  ) {
-			if ( $apply_dscnt == 'true' ) {
-				$vlm_dscnt_cats .= $cat_id . ',';					
-			}
-		}
-		$vlm_dscnt_cats = rtrim( $vlm_dscnt_cats, ',' );
+		// grab categories and remove duplicates 
+		$this->_vlm_dscnt_cats = array_unique( $this->_vlm_dscnt_cats );
+		// convert to csv
+		$vlm_dscnt_cats = implode( ',', $this->_vlm_dscnt_cats );
+		
 		
 		$discount = '
 			<input id="vlm_dscnt_factor" type="hidden" name="vlm_dscnt_factor" value="'.$this->_settings_options['vlm-dscnt-factor-slct'].'" />
