@@ -45,6 +45,8 @@ class EE_VLM_DSCNT {
 	var $_class_credits = 0;
 	// wp admin page name
 	private $_vlm_dscnt_settings_page = FALSE;
+	// counter
+	private $_vlm_dscnt_cntr = 0;
 
 
 
@@ -60,6 +62,7 @@ class EE_VLM_DSCNT {
 		if ( self::$_instance === NULL  or ! is_object( self::$_instance ) or ! is_a( self::$_instance, __CLASS__ )) {
 			self::$_instance = new self();
 		}
+		echo '<h3>'. __CLASS__ . '->' . __FUNCTION__ . ' <br /><span style="font-size:10px;font-weight:normal;">' . __FILE__ . '<br />line no: ' . __LINE__ . '</span></h3>';
 		return self::$_instance;
 	}
 	
@@ -1050,7 +1053,7 @@ class EE_VLM_DSCNT {
 	public function hook_add_to_multi_reg_cart_block( $event ) {	
 		
 		echo '
-			<input class="vlm_dscnt_cat" type="hidden" name="vlm_dscnt_cat['.$event->id.']" value="'.$event->cat_id.'" />';
+			<input class="vlm_dscnt_cat" type="hidden" name="vlm_dscnt_cat['.$event->id.']" value="'.$event->category_id.'" />';
 			
 		switch ( $this->_settings_options['vlm-dscnt-factor-slct'] ) {
 			
@@ -1076,9 +1079,11 @@ class EE_VLM_DSCNT {
 					$vlm_dscnt_cntr = $this->_settings_options['vlm-dscnt-default-meta-field-value-txt'];
 				}
 				
-				$this->_vlm_dscnt_cntr = $this->_vlm_dscnt_cntr + $vlm_dscnt_cntr;
+				$this->_vlm_dscnt_cntr += $vlm_dscnt_cntr;
+				
 				echo '
-			<input class="vlm_dscnt_cntr" type="hidden" name="vlm_dscnt_cntr['.$event->id.']" value="'.$vlm_dscnt_cntr.'" />';				
+			<input class="vlm_dscnt_cntr" type="hidden" name="vlm_dscnt_cntr['.$event->id.']" value="'.$vlm_dscnt_cntr.'" />	';				
+			
 			break;
 			
 		}
