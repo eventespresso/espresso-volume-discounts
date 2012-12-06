@@ -17,7 +17,7 @@ var vDebug = false;		//  true		false
 	function display_vDebug( vDebugMsg ) {
 		if ( vDebug ) {
 			$('#volume-discounts-debug').append( vDebugMsg +"<br /><br />" );
-			console.log( vDebugMsg +"<br /><br />" );
+			console.log( vDebugMsg );
 		}		
 	}
 
@@ -62,7 +62,8 @@ var vDebug = false;		//  true		false
 			var discount = savings.toFixed(2);
 			// is there a discount?
 			var process_vlm_dscnt = espresso_process_vlm_dscnt();
-			if ( process_vlm_dscnt == 'Y' && ! isNaN(discount) && ! isNaN(discounted_total) && event_total_price > 0 ) {
+			display_vDebug( (new Error).lineNumber + ') process_vlm_dscnt: '+process_vlm_dscnt+'<br />' + 'discount: '+discount+'<br />' + 'discounted_total: '+discounted_total );
+			if ( process_vlm_dscnt == 'Y' && ! isNaN(discount) && ! isNaN(discounted_total) && discount > 0 && event_total_price > 0 ) {
 
 				var msg = '<span class="event_total_price" style="clear:both; width:auto;">'+evd.msg+' ' + evd.cur_sign + '<span>'+discount+'</span></span>';
 				msg = msg+'<span class="event_total_price" style="clear:both; width:auto;">Total ' + evd.cur_sign + '<span>'+discounted_total+'</span></span>';
@@ -209,12 +210,11 @@ var vDebug = false;		//  true		false
 			if ( event_cat == undefined || event_cat == '' ) {
 				event_cat = -1;
 			}
-			display_vDebug( (new Error).lineNumber + ') event_cat = '+event_cat );
+			display_vDebug( (new Error).lineNumber + ') event_cat = '+event_cat + '<br />' + 'vlm_dscnt_categories = '+vlm_dscnt_categories + '<br />' + 'inArray = '+jQuery.inArray( event_cat, vlm_dscnt_categories )  );
 		
 			// is it in our list of categories that get discounts?
-			if(( jQuery.inArray( event_cat, vlm_dscnt_categories )) > -1 || vlm_dscnt_categories == 'A' ) {
+			if( vlm_dscnt_categories == 'A,' || ( jQuery.inArray( event_cat, vlm_dscnt_categories )) > -1 ) {
 			
-				display_vDebug( (new Error).lineNumber + ') ' + event_cat+' is in '+vlm_dscnt_categories );
 				display_vDebug( (new Error).lineNumber + ') vlm_dscnt_cntr: '+vlm_dscnt_cntr+'<br />' + 'vlm_dscnt_cntr_total: '+vlm_dscnt_cntr_total );
 						
 				// is discount based on cart total ?
@@ -288,6 +288,10 @@ var vDebug = false;		//  true		false
 			}
 	
 		});
+		
+		if ( vlm_dscnt_cntr_total == undefined || vlm_dscnt_cntr_total == null ) {
+			vlm_dscnt_cntr_total = 0;
+		}
 		
 		// set the counter total
 		$('#vlm_dscnt_cntr_total').val( vlm_dscnt_cntr_total );
