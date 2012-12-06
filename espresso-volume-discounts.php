@@ -999,10 +999,12 @@ class EE_VLM_DSCNT {
 		
 		$this->_settings_options = get_option('espresso_volume_discounts');
 		
-		foreach ( $this->_settings_options['vlm-dscnt-categories-slct'] as $cat_id => $discount_cat ) {			
-			if ( $discount_cat == 'true' ) {
-				$this->_vlm_dscnt_cats[] = $cat_id;
-			}
+		if ( isset( $this->_settings_options['vlm-dscnt-categories-slct'] ) && ! empty( $this->_settings_options['vlm-dscnt-categories-slct'] )) {
+			foreach ( $this->_settings_options['vlm-dscnt-categories-slct'] as $cat_id => $discount_cat ) {			
+				if ( $discount_cat == 'true' ) {
+					$this->_vlm_dscnt_cats[] = $cat_id;
+				}
+			}			
 		}
 		//printr( $this->_vlm_dscnt_cats, '$this->_vlm_dscnt_cats  <br /><span style="font-size:10px;font-weight:normal;">' . __FILE__ . '<br />line no: ' . __LINE__ . '</span>', 'auto' );
 		
@@ -1053,6 +1055,54 @@ class EE_VLM_DSCNT {
 
 
 
+	/**
+	*		edit the SELECT and FROM portion of the SQL statement used to poulate the Shopping Cart
+	*		
+	*		@param 	string	$sql
+	*		@access 	public
+	*		@return 	string
+	*/	
+	function filter_shopping_cart_SQL_select ( $sql ) {
+	
+		global $wpdb;
+		
+//		printr( $this->_settings_options, 'settings_options' );
+
+		// check if individual categories are being targeted, by checking against ALL categories selected
+//		if ( isset( $this->_settings_options['vlm-dscnt-categories-slct']['A'] ) && $this->_settings_options['vlm-dscnt-categories-slct']['A'] == 'true' ) {
+//			return $sql;
+//		}
+
+		if ( defined( EVENTS_DETAIL_TABLE )) {
+			$evnt_tbl = EVENTS_DETAIL_TABLE;
+		} else {
+			$evnt_tbl = $wpdb->prefix . 'events_detail';
+		}	
+		
+		if ( defined( EVENTS_CATEGORY_TABLE )) {
+			$cat_tbl = EVENTS_CATEGORY_TABLE;
+		} else {
+			$cat_tbl = $wpdb->prefix . 'events_category_detail';
+		}
+		
+		if ( defined( EVENTS_CATEGORY_REL_TABLE )) {
+			$evnt_cat_tbl = EVENTS_CATEGORY_REL_TABLE;
+		} else {
+			$evnt_cat_tbl = $wpdb->prefix . 'events_category_rel';
+		}
+	
+        $sql = 'SELECT e.*, r.cat_id, c.category_name';		
+        $sql .= ' FROM ' . $evnt_tbl . ' e';
+        $sql .= ' LEFT JOIN ' . $evnt_cat_tbl . ' r ON r.event_id = e.id ';
+        $sql .= ' LEFT JOIN ' . $cat_tbl . ' c ON  c.id = r.cat_id ';		
+	
+		return $sql;
+		
+	}
+
+
+
+
 	
 	/**
 	*		add content to the bottom of each multi_reg_cart_block in the shopping cart template
@@ -1063,16 +1113,17 @@ class EE_VLM_DSCNT {
 	*/	
 	public function hook_add_to_multi_reg_cart_block( $event ) {	
 	
-		if ( isset( $this->_settings_options['vlm-dscnt-categories-slct'][$event->category_id] ) && $this->_settings_options['vlm-dscnt-categories-slct'][$event->category_id] == 'true' ) {
-			$this->_vlm_dscnt_cats[] = $event->category_id;
+		if (( isset( $this->_settings_options['vlm-dscnt-categories-slct'][$event->cat_id] ) && $this->_settings_options['vlm-dscnt-categories-slct'][$event->cat_id] == 'true' )
+			|| ( isset( $this->_settings_options['vlm-dscnt-categories-slct']['A'] ) && $this->_settings_options['vlm-dscnt-categories-slct']['A'] == 'true' )) {
+			$this->_vlm_dscnt_cats[] = $event->cat_id;
 		}
 		
-		printr( $this->_vlm_dscnt_cats, '$this->_vlm_dscnt_cats  <br /><span style="font-size:10px;font-weight:normal;">' . __FILE__ . '<br />line no: ' . __LINE__ . '</span>', 'auto' );
-		echo '<h4>$event->category_id : ' . $event->category_id . '  <br /><span style="font-size:10px;font-weight:normal;">' . __FILE__ . '<br />line no: ' . __LINE__ . '</span></h4>';
+//		echo '<h4>$event->cat_id : ' . $event->cat_id . '  <br /><span style="font-size:10px;font-weight:normal;">' . __FILE__ . '<br />line no: ' . __LINE__ . '</span></h4>';
+//		printr( $this->_vlm_dscnt_cats, '$this->_vlm_dscnt_cats  <br /><span style="font-size:10px;font-weight:normal;">' . __FILE__ . '<br />line no: ' . __LINE__ . '</span>', 'auto' );
 		
 		
 		echo '
-			<input class="vlm_dscnt_cat" type="hidden" name="vlm_dscnt_cat['.$event->id.']" value="'.$event->category_id.'" />';
+			<input class="vlm_dscnt_cat" type="hidden" name="vlm_dscnt_cat['.$event->id.']" value="'.$event->cat_id.'" />';
 			
 		switch ( $this->_settings_options['vlm-dscnt-factor-slct'] ) {
 			
