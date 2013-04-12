@@ -204,16 +204,22 @@ var vDebug = false;		//  true		false
 			display_vDebug( (new Error).lineNumber + ') ' + $( this ).find( '.event_title' ).html() );
 			// total tickets for this event
 			var totalTickets = 0;
-
+			var event_cat_good = false;
 			// category id for this event
-			var event_cat = $( this ).find( '.vlm_dscnt_cat' ).val();	
-			if ( event_cat == undefined || event_cat == '' ) {
-				event_cat = -1;
-			}
-			display_vDebug( (new Error).lineNumber + ') event_cat = '+event_cat + '<br />' + 'vlm_dscnt_categories = '+vlm_dscnt_categories + '<br />' + 'inArray = '+jQuery.inArray( event_cat, vlm_dscnt_categories )  );
+			//var event_cat = new Array();
+			var event_cats = $( this ).find( '.vlm_dscnt_cat' ).each(function ( i ) {
+				event_cat = $( this ).val();
+				display_vDebug( (new Error).lineNumber + ') event_cat = '+event_cat + '<br />' + 'inArray = '+jQuery.inArray( event_cat, vlm_dscnt_categories )  );
+				if (  jQuery.inArray( event_cat, vlm_dscnt_categories ) > -1 ) {
+					event_cat_good = true;
+				}
+			});	
+
+
+			display_vDebug( (new Error).lineNumber + ') event_cat_good = '+event_cat_good + '<br />' + 'vlm_dscnt_categories = '+vlm_dscnt_categories );
 		
 			// is it in our list of categories that get discounts?
-			if( vlm_dscnt_categories == 'A,' || ( jQuery.inArray( event_cat, vlm_dscnt_categories )) > -1 ) {
+			if( vlm_dscnt_categories == 'A,' || event_cat_good ) {
 			
 				display_vDebug( (new Error).lineNumber + ') vlm_dscnt_cntr: '+vlm_dscnt_cntr+'<br />' + 'vlm_dscnt_cntr_total: '+vlm_dscnt_cntr_total );
 						
