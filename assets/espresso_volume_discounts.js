@@ -38,7 +38,7 @@ var vDebug = false;		//  true		false
 			display_vDebug( (new Error).lineNumber + ')  event_total_price: '+event_total_price );
 		
 			// no savings yet, so for now this is the orig price
-			var orig_total = event_total_price;
+			var orig_total = parseFloat( event_total_price );
 			// what discounts are based on
 			var vlm_dscnt_factor = $('#vlm_dscnt_factor').val();
 			// what discounts are based on
@@ -55,31 +55,35 @@ var vDebug = false;		//  true		false
 				// percentage discount
 				event_total_price = event_total_price * (( 100 - vlm_dscnt_amount ) / 100 );
 			}
-			event_total_price = parseFloat(event_total_price).toFixed(2);
 			// make it look like money
-			var discounted_total = event_total_price;
-			var savings = orig_total - discounted_total;
-			var discount = savings.toFixed(2);
+			var discounted_total = parseFloat( event_total_price );
+			if ( discounted_total < 0 ) {
+				discounted_total = 0.00;
+			}
+			var discount = parseFloat( orig_total - discounted_total );
+
 			// is there a discount?
 			var process_vlm_dscnt = espresso_process_vlm_dscnt();
-			display_vDebug( (new Error).lineNumber + ') process_vlm_dscnt: '+process_vlm_dscnt+'<br />' + 'discount: '+discount+'<br />' + 'discounted_total: '+discounted_total );
-			if ( process_vlm_dscnt == 'Y' && ! isNaN(discount) && ! isNaN(discounted_total) && discount > 0 && event_total_price > 0 ) {
+			
+			if ( process_vlm_dscnt == 'Y' && ! isNaN(discount) && ! isNaN(discounted_total) && discount > 0 && discounted_total >= 0 ) {
 
-				var msg = '<span class="event_total_price" style="clear:both; width:auto;">'+evd.msg+' ' + evd.cur_sign + '<span>'+discount+'</span></span>';
-				msg = msg+'<span class="event_total_price" style="clear:both; width:auto;">Total ' + evd.cur_sign + '<span>'+discounted_total+'</span></span>';
+				display_vDebug( (new Error).lineNumber + ') process_vlm_dscnt: '+dump( process_vlm_dscnt )+'<br />' + 'discount: '+dump( discount )+'<br />' + 'discounted_total: '+dump( discounted_total ));
+				var msg = '<span class="event_total_price" style="clear:both; width:auto;">'+evd.msg+' ' + evd.cur_sign + '<span>'+discount.toFixed(2)+'</span></span>';
+				msg = msg+'<span class="event_total_price" style="clear:both; width:auto;">Total ' + evd.cur_sign + '<span>'+discounted_total.toFixed(2)+'</span></span>';
 			
 				// hide it, switch it, then fade it in... oh yeah that's nice
 				$('#shopping_cart_after_total').hide().html(msg).fadeIn();
 
 			} else {
+				display_vDebug( (new Error).lineNumber + ') no discount' );
 				// remove discount
 				$('#shopping_cart_after_total').html('')
 				discount = 0;
 			}
 			
-			if ( discounted_total != NaN && parseFloat(discounted_total) <= parseFloat(orig_total) && discounted_total != '0.00' ) {			
+			if ( parseFloat(discounted_total) != NaN && parseFloat(discounted_total) <= parseFloat(orig_total) ) {			
 				// it's good? then store it in the session'
-				espresso_store_discount_in_session( discount );
+				espresso_store_discount_in_session( discount.toFixed(2) );
 			}
 			
 			$('#spinner').fadeOut('fast');
@@ -194,6 +198,16 @@ var vDebug = false;		//  true		false
 		var vlm_dscnt_cats = $('#vlm_dscnt_categories').val();
 		// change to an array
 		var vlm_dscnt_categories = vlm_dscnt_cats.split(',');
+		if ( vlm_dscnt_categories instanceof Array ) {
+			$.each( vlm_dscnt_categories, function( i, vlm_dscnt_cat ){
+				vlm_dscnt_categories[ i ] = parseInt( vlm_dscnt_cat );
+				display_vDebug( (new Error).lineNumber + ') ' + 'vlm_dscnt_cat = '+ dump( vlm_dscnt_cat ) );
+			});		
+		} else {
+			vlm_dscnt_categories = new Array();
+			vlm_dscnt_categories[0] = parseInt( vlm_dscnt_cats );			
+			display_vDebug( (new Error).lineNumber + ') ' + 'vlm_dscnt_categories = '+ vlm_dscnt_cats );
+		} 
 		// price_id selector
 		var priceID = false;
 		
@@ -206,17 +220,17 @@ var vDebug = false;		//  true		false
 			var totalTickets = 0;
 			var event_cat_good = false;
 			// category id for this event
-			//var event_cat = new Array();
-			var event_cats = $( this ).find( '.vlm_dscnt_cat' ).each(function ( i ) {
-				event_cat = $( this ).val();
-				display_vDebug( (new Error).lineNumber + ') event_cat = '+event_cat + '<br />' + 'inArray = '+jQuery.inArray( event_cat, vlm_dscnt_categories )  );
-				if (  jQuery.inArray( event_cat, vlm_dscnt_categories ) > -1 ) {
+			var event_cats = $( this ).find( '.vlm_dscnt_cat' ).each( function () {
+				event_cat = parseInt( $( this ).val() );
+				display_vDebug( (new Error).lineNumber + ') event_cat = '+ dump( event_cat ) + '<br />' + 'vlm_dscnt_categories = '+ dump( vlm_dscnt_categories ) + '<br />' + 'inArray = '+jQuery.inArray( event_cat, vlm_dscnt_categories )  );
+				
+				
+				if (  jQuery.inArray( event_cat, vlm_dscnt_categories )> -1 ) {
 					event_cat_good = true;
 				}
 			});	
 
-
-			display_vDebug( (new Error).lineNumber + ') event_cat_good = '+event_cat_good + '<br />' + 'vlm_dscnt_categories = '+vlm_dscnt_categories );
+			display_vDebug( (new Error).lineNumber + ') event_cat_good = '+event_cat_good );
 		
 			// is it in our list of categories that get discounts?
 			if( vlm_dscnt_categories == 'A,' || event_cat_good ) {
@@ -384,6 +398,45 @@ var vDebug = false;		//  true		false
 		// initialize the cart	
 		kickstart();
 	}
+
+	
+	/**
+	 * Function : dump()
+	 * Arguments: The data - array,hash(associative array),object
+	 *    The level - OPTIONAL
+	 * Returns  : The textual representation of the array.
+	 * This function was inspired by the print_r function of PHP.
+	 * This will accept some data as the argument and return a
+	 * text that will be a more readable version of the
+	 * array/hash/object that is given.
+	 * Docs: http://www.openjs.com/scripts/others/dump_function_php_print_r.php
+	 */
+	function dump(arr,level) {
+		var dumped_text = "[ "+typeof(arr)+" ] \n";
+		if(!level) level = 0;
+		
+		//The padding given at the beginning of the line.
+		var level_padding = "";
+		for(var j=0;j<level+1;j++) level_padding += "    ";
+		
+		if(typeof(arr) == 'object') { //Array/Hashes/Objects 
+			for(var item in arr) {
+				var value = arr[item];
+				
+				//If it is an array,
+				if(typeof(value) == 'object') { 
+					dumped_text += level_padding + "'" + item + "' ...\n";
+					dumped_text += dump(value,level+1);
+				} else {
+					dumped_text += level_padding + "'" + item + "' => '" + value + "'\n";
+				}
+			}
+		} else { //Stings/Chars/Numbers etc.
+			dumped_text += " "+arr;
+		}
+		return dumped_text;
+	}
+
 
 	
 })(jQuery);
