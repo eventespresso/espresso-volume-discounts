@@ -1358,7 +1358,7 @@ class EE_VLM_DSCNT {
 	
 		// do I have to explain this?
 		$_SESSION['espresso_session']['volume_discount'] = 0;
-		$_SESSION['espresso_session']['grand_total'] = $_SESSION['espresso_session']['pre_discount_total'];
+		$_SESSION['espresso_session']['grand_total'] = isset( $_SESSION['espresso_session']['pre_discount_total'] ) ? $_SESSION['espresso_session']['pre_discount_total'] : $_SESSION['espresso_session']['grand_total'];
 	
 	}
 
