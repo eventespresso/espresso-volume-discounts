@@ -1010,7 +1010,8 @@ class EE_VLM_DSCNT {
 		
 		// start hooking
 		add_action( 'init', array( &$this, '_load_frontend_resources' ) );		
-		add_filter( 'filter_hook_espresso_shopping_cart_SQL_select', array( &$this, 'filter_shopping_cart_SQL_select' ), 1, 1 );
+//		add_filter( 'filter_hook_espresso_shopping_cart_SQL_select', array( &$this, 'filter_shopping_cart_SQL_select' ), 1, 1 );
+		add_filter( 'filter_hook_espresso_shopping_cart_event', array( &$this, 'filter_shopping_cart_event' ), 1, 1 );
 		add_action( 'action_hook_espresso_add_to_multi_reg_cart_block', array( &$this, 'hook_add_to_multi_reg_cart_block' )); 
 		add_action( 'action_hook_espresso_shopping_cart_before_total', array( &$this, 'hook_shopping_cart_before_total' ));
 		add_action( 'action_hook_espresso_shopping_cart_after_total', array( &$this, 'hook_shopping_cart_after_total' ));
@@ -1058,20 +1059,13 @@ class EE_VLM_DSCNT {
 	/**
 	*		edit the SELECT and FROM portion of the SQL statement used to poulate the Shopping Cart
 	*		
-	*		@param 	string	$sql
 	*		@access 	public
-	*		@return 	string
+	*		@param 	string	$sql
+	*		@return 		string
 	*/	
 	function filter_shopping_cart_SQL_select ( $sql ) {
 	
 		global $wpdb;
-		
-//		printr( $this->_settings_options, 'settings_options' );
-
-		// check if individual categories are being targeted, by checking against ALL categories selected
-//		if ( isset( $this->_settings_options['vlm-dscnt-categories-slct']['A'] ) && $this->_settings_options['vlm-dscnt-categories-slct']['A'] == 'true' ) {
-//			return $sql;
-//		}
 
 		if ( defined( EVENTS_DETAIL_TABLE )) {
 			$evnt_tbl = EVENTS_DETAIL_TABLE;
@@ -1093,10 +1087,53 @@ class EE_VLM_DSCNT {
 	
         $sql = 'SELECT e.*, r.cat_id, c.category_name';		
         $sql .= ' FROM ' . $evnt_tbl . ' e';
-        $sql .= ' LEFT JOIN ' . $evnt_cat_tbl . ' r ON r.event_id = e.id ';
-        $sql .= ' LEFT JOIN ' . $cat_tbl . ' c ON  c.id = r.cat_id ';		
+        $sql .= ' JOIN ' . $evnt_cat_tbl . ' r ON r.event_id = e.id ';
+        $sql .= ' JOIN ' . $cat_tbl . ' c ON  c.id = r.cat_id ';		
 	
 		return $sql;
+		
+	}
+
+
+
+
+
+	/**
+	*		edit an event in the Shopping Cart
+	*		
+	*		@access 	public
+	*		@param 	object	$event
+	*		@return 		string
+	*/	
+	function filter_shopping_cart_event ( $event ) {
+	
+		global $wpdb;
+
+		if ( defined( EVENTS_CATEGORY_TABLE )) {
+			$cat_tbl = EVENTS_CATEGORY_TABLE;
+		} else {
+			$cat_tbl = $wpdb->prefix . 'events_category_detail';
+		}
+
+		if ( defined( EVENTS_CATEGORY_REL_TABLE )) {
+			$evnt_cat_tbl = EVENTS_CATEGORY_REL_TABLE;
+		} else {
+			$evnt_cat_tbl = $wpdb->prefix . 'events_category_rel';
+		}
+
+		$sql = 'SELECT r.cat_id, c.category_name';		
+		$sql .= ' FROM ' . $evnt_cat_tbl . ' r ';
+		$sql .= ' JOIN ' . $cat_tbl . ' c ON  c.id = r.cat_id ';		
+		$sql .= ' WHERE  r.event_id = %d';
+		$results = $wpdb->get_results( $wpdb->prepare( $sql, $event->id ));
+		
+		$categories = array();
+		foreach( $results as $result ) {
+			$categories[ $result->cat_id ] = $result->category_name;
+		}		
+		$event->categories = $categories;
+	
+		return $event;
 		
 	}
 
@@ -1113,18 +1150,27 @@ class EE_VLM_DSCNT {
 	*/	
 	public function hook_add_to_multi_reg_cart_block( $event ) {	
 	
-		if (( isset( $this->_settings_options['vlm-dscnt-categories-slct'][$event->cat_id] ) && $this->_settings_options['vlm-dscnt-categories-slct'][$event->cat_id] == 'true' )
-			|| ( isset( $this->_settings_options['vlm-dscnt-categories-slct']['A'] ) && $this->_settings_options['vlm-dscnt-categories-slct']['A'] == 'true' )) {
-			$this->_vlm_dscnt_cats[] = $event->cat_id;
+//		printr( $event, '$event  <br /><span style="font-size:10px;font-weight:normal;">' . __FILE__ . '<br />line no: ' . __LINE__ . '</span>', 'auto' );
+//		printr( $this->_settings_options, '$this->_settings_options  <br /><span style="font-size:10px;font-weight:normal;">' . __FILE__ . '<br />line no: ' . __LINE__ . '</span>', 'auto' );
+//		printr( $this->_vlm_dscnt_cats, '$this->_vlm_dscnt_cats  <br /><span style="font-size:10px;font-weight:normal;">' . __FILE__ . '<br />line no: ' . __LINE__ . '</span>', 'auto' );
+		if ( isset( $event->categories )) {
+			foreach ( $event->categories as $cat_id => $cat_name  ) {
+				if (  isset( $this->_settings_options['vlm-dscnt-categories-slct']['A'] ) && $this->_settings_options['vlm-dscnt-categories-slct']['A'] == 'true' ) {
+					$this->_vlm_dscnt_cats[] = $cat_id;
+				}		
+				echo '
+			<input class="vlm_dscnt_cat" type="hidden" name="vlm_dscnt_cat['.$event->id.'][]" value="' . $cat_id . '" />';
+			}
 		}
+
 		
-//		echo '<h4>$event->cat_id : ' . $event->cat_id . '  <br /><span style="font-size:10px;font-weight:normal;">' . __FILE__ . '<br />line no: ' . __LINE__ . '</span></h4>';
+//		echo '<h4>$cat_id : ' . $cat_id . '  <br /><span style="font-size:10px;font-weight:normal;">' . __FILE__ . '<br />line no: ' . __LINE__ . '</span></h4>';
 //		printr( $this->_vlm_dscnt_cats, '$this->_vlm_dscnt_cats  <br /><span style="font-size:10px;font-weight:normal;">' . __FILE__ . '<br />line no: ' . __LINE__ . '</span>', 'auto' );
 		
+//		echo '
+//			<input class="vlm_dscnt_cat" type="hidden" name="vlm_dscnt_cat['.$event->id.']" value="' . implode( ',', array_keys( $event->categories )) . '" />';
 		
-		echo '
-			<input class="vlm_dscnt_cat" type="hidden" name="vlm_dscnt_cat['.$event->id.']" value="'.$event->cat_id.'" />';
-			
+		
 		switch ( $this->_settings_options['vlm-dscnt-factor-slct'] ) {
 			
 			case 'fctr_registrations' :
