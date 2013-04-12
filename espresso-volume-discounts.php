@@ -334,7 +334,7 @@ class EE_VLM_DSCNT {
 	
 //		echo __FUNCTION__ . '<br />';
 //		echo '<pre>' . print_r( $desc ) . '</pre><br />';
-//		echo "<p>" . __( $desc, 'espresso' ) . "</p>";
+//		echo "<p>" . __( $desc, 'event_espresso' ) . "</p>";
 	}
 
 
@@ -434,7 +434,7 @@ class EE_VLM_DSCNT {
 			
 				foreach($choices as $item) {
 					$item = explode("|",$item); // cat_name|cat_slug
-					$item[0] = esc_html__($item[0], 'espresso');
+					$item[0] = esc_html( $item[0] );
 					if (!empty($options[$id])) {
 						foreach ($options[$id] as $option_key => $option_val){
 							if ($item[1] == $option_key) {
@@ -465,8 +465,8 @@ class EE_VLM_DSCNT {
 		
 				echo "<select id='$id' class='select$field_class' name='" . $option_name . "[$id]'>";
 					foreach($choices as $item) {
-						$value 	= esc_attr($item, 'espresso');
-						$item 	= esc_html($item, 'espresso');
+						$value 	= esc_attr( $item );
+						$item 	= esc_html( $item );
 						
 						$selected = ($options[$id]==$value) ? 'selected="selected"' : '';
 						echo "<option value='$value' $selected>$item&nbsp;&nbsp;</option>";
@@ -483,7 +483,7 @@ class EE_VLM_DSCNT {
 				foreach($choices as $item) {
 					
 					$item = explode("|",$item);
-					$item[0] = esc_html($item[0], 'espresso');
+					$item[0] = esc_html( $item[0] );
 					
 					$selected = ($options[$id]==$item[1]) ? 'selected="selected"' : '';
 					echo "<option value='$item[1]' $selected>$item[0]&nbsp;&nbsp;</option>";
@@ -511,7 +511,7 @@ class EE_VLM_DSCNT {
 				foreach($choices as $item) {
 					
 					$item = explode("|",$item);
-					$item[0] = esc_html($item[0], 'espresso');
+					$item[0] = esc_html( $item[0] );
 					
 					$checked = '';
 					
@@ -538,7 +538,7 @@ class EE_VLM_DSCNT {
 				foreach($choices as $item) {
 					
 					$item = explode("|",$item);
-					$item[0] = esc_html($item[0], 'espresso');
+					$item[0] = esc_html( $item[0] );
 					
 					$checked = '';
 					
