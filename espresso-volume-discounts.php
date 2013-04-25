@@ -138,6 +138,11 @@ class EE_VLM_DSCNT {
 		
 		// installation
 		register_activation_hook( __FILE__, array( &$this, 'install_volume_discounts' ));
+		// check for MER
+		if ( $_GET['page'] == 'volume-discounts' && ! defined( 'ESPRESSO_MULTI_REG_VERSION' )) {
+			// admin messages hook!
+			add_action('admin_notices', array( &$this, 'mer_required_msg' ));		
+		}
 		// link to VLM_DSCNT settings page from the plugin page
 		add_filter( 'plugin_action_links_' . VLM_DSCNT_PLUGIN, array( &$this, 'plugin_page_to_settings_link' ), 10, 1 );
 		// load settings options
@@ -167,6 +172,19 @@ class EE_VLM_DSCNT {
 		//echo __FUNCTION__ . '<br />';
 
 	
+	}
+
+
+
+
+
+	/**
+	*		mer_required_msg
+	*		@access public
+	*		@return void
+	*/	
+	public function mer_required_msg() {
+		$this->show_msg('<p class="setting-error-message" title="MER is required">' . __( '<b>MER is NOT activated!</b> This addon works in conjunction with the Event Espresso Multi-Event Registration addon and is required in order to function properly. Please activate MER!', 'event_espresso' ) . '</p>', 'error' );
 	}
 	
 	
