@@ -200,12 +200,20 @@ var vDebug = false;		//  true		false
 		var vlm_dscnt_categories = vlm_dscnt_cats.split(',');
 		if ( vlm_dscnt_categories instanceof Array ) {
 			$.each( vlm_dscnt_categories, function( i, vlm_dscnt_cat ){
-				vlm_dscnt_categories[ i ] = parseInt( vlm_dscnt_cat );
+				if ( vlm_dscnt_cats == 'A' ) {
+					vlm_dscnt_categories[i] =  'A';
+				} else {
+					vlm_dscnt_categories[i] = parseInt( vlm_dscnt_cats );			
+				}
 				display_vDebug( (new Error).lineNumber + ') ' + 'vlm_dscnt_cat = '+ dump( vlm_dscnt_cat ) );
 			});		
 		} else {
 			vlm_dscnt_categories = new Array();
-			vlm_dscnt_categories[0] = parseInt( vlm_dscnt_cats );			
+			if ( vlm_dscnt_cats == 'A' ) {
+				vlm_dscnt_categories[0] =  'A';
+			} else {
+				vlm_dscnt_categories[0] = parseInt( vlm_dscnt_cats );			
+			}
 			display_vDebug( (new Error).lineNumber + ') ' + 'vlm_dscnt_categories = '+ vlm_dscnt_cats );
 		} 
 		// price_id selector
@@ -222,18 +230,20 @@ var vDebug = false;		//  true		false
 			// category id for this event
 			var event_cats = $( this ).find( '.vlm_dscnt_cat' ).each( function () {
 				event_cat = parseInt( $( this ).val() );
-				display_vDebug( (new Error).lineNumber + ') event_cat = '+ dump( event_cat ) + '<br />' + 'vlm_dscnt_categories = '+ dump( vlm_dscnt_categories ) + '<br />' + 'inArray = '+jQuery.inArray( event_cat, vlm_dscnt_categories )  );
-				
-				
+				display_vDebug( (new Error).lineNumber + ') event_cat = '+ dump( event_cat ) + '<br />' + 'vlm_dscnt_categories = '+ dump( vlm_dscnt_categories ) + '<br />' + 'inArray = '+jQuery.inArray( event_cat, vlm_dscnt_categories )  );				
+				// check if this event's category is in the list of discounted categories
 				if (  jQuery.inArray( event_cat, vlm_dscnt_categories )> -1 ) {
 					event_cat_good = true;
 				}
 			});	
 
-			display_vDebug( (new Error).lineNumber + ') event_cat_good = '+event_cat_good );
+			if (  jQuery.inArray( 'A', vlm_dscnt_categories ) > -1 ) {
+				event_cat_good = true;
+			}
+			display_vDebug( (new Error).lineNumber + ') event_cat_good = '+event_cat_good + '<br />' + 'vlm_dscnt_categories = '+ dump( vlm_dscnt_categories ) );
 		
 			// is it in our list of categories that get discounts?
-			if( vlm_dscnt_categories == 'A,' || event_cat_good ) {
+			if( event_cat_good ) {
 			
 				display_vDebug( (new Error).lineNumber + ') vlm_dscnt_cntr: '+vlm_dscnt_cntr+'<br />' + 'vlm_dscnt_cntr_total: '+vlm_dscnt_cntr_total );
 						
