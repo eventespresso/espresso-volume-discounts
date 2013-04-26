@@ -200,13 +200,14 @@ var vDebug = false;		//  true		false
 		var vlm_dscnt_categories = vlm_dscnt_cats.split(',');
 		if ( vlm_dscnt_categories instanceof Array ) {
 			$.each( vlm_dscnt_categories, function( i, vlm_dscnt_cat ){
-				if ( vlm_dscnt_cats == 'A' ) {
+				if ( vlm_dscnt_cat == 'A' ) {
 					vlm_dscnt_categories[i] =  'A';
 				} else {
-					vlm_dscnt_categories[i] = parseInt( vlm_dscnt_cats );			
-				}
+					vlm_dscnt_categories[i] = parseInt( vlm_dscnt_cat );
+				}				
 				display_vDebug( (new Error).lineNumber + ') ' + 'vlm_dscnt_cat = '+ dump( vlm_dscnt_cat ) );
-			});		
+			});
+
 		} else {
 			vlm_dscnt_categories = new Array();
 			if ( vlm_dscnt_cats == 'A' ) {
