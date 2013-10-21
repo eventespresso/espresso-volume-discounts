@@ -140,7 +140,7 @@ class EE_VLM_DSCNT {
 		// installation
 		register_activation_hook( __FILE__, array( &$this, 'install_volume_discounts' ));
 		// check for MER
-		if ( $_GET['page'] == 'volume-discounts' && ! defined( 'ESPRESSO_MULTI_REG_VERSION' )) {
+		if ( !empty($_GET['page']) && $_GET['page'] == 'volume-discounts' && ! defined( 'ESPRESSO_MULTI_REG_VERSION' )) {
 			// admin messages hook!
 			add_action('admin_notices', array( &$this, 'mer_required_msg' ));		
 		}
