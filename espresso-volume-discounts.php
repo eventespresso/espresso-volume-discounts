@@ -105,8 +105,9 @@ class EE_VLM_DSCNT {
 		
 		// load code for admin or frontend ?
 		if ( is_admin() ) {
-			// you are in control
-			$this->admin();			
+			// you are in control, unless it's an ajax call
+			if (!defined('DOING_AJAX'))
+                            $this->admin();			
 		} else {
 			// public functionality
 			$this->frontend();
