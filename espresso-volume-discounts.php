@@ -3,7 +3,7 @@
 Plugin Name: Event Espresso Volume Discounts
 Plugin URI: http://www.eventespresso.com
 Description: Volume Discounts addon for Event Espresso - apply discounts based on a factor such as the number of events registered for, or the toal dollar value spent
-Version: 0.4
+Version: 0.5.1
 Author: Seth Shoultes
 Author URI: http://www.eventespresso.com
 Copyright (c) 2008-2011 Event Espresso  All Rights Reserved.
@@ -45,6 +45,10 @@ class EE_VLM_DSCNT {
 	var $_class_credits = 0;
 	// wp admin page name
 	private $_vlm_dscnt_settings_page = FALSE;
+	// counter
+	private $_vlm_dscnt_cntr = 0;
+	// volume discount event categories
+	private $_vlm_dscnt_cats = array();
 
 
 
@@ -75,6 +79,9 @@ class EE_VLM_DSCNT {
 	*/	
 	private function __construct() {
 		
+		if ( ! defined( 'EVENT_ESPRESSO_VERSION' ))  {
+			return;
+		}
 		// prefix
 	    define('VLM_DSCNT', 'vlmdscnt');  
 		// the settings page slug  
@@ -98,8 +105,9 @@ class EE_VLM_DSCNT {
 		
 		// load code for admin or frontend ?
 		if ( is_admin() ) {
-			// you are in control
-			$this->admin();			
+			// you are in control, unless it's an ajax call
+			if (!defined('DOING_AJAX'))
+                            $this->admin();			
 		} else {
 			// public functionality
 			$this->frontend();
@@ -131,6 +139,11 @@ class EE_VLM_DSCNT {
 		
 		// installation
 		register_activation_hook( __FILE__, array( &$this, 'install_volume_discounts' ));
+		// check for MER
+		if ( !empty($_GET['page']) && $_GET['page'] == 'volume-discounts' && ! defined( 'ESPRESSO_MULTI_REG_VERSION' )) {
+			// admin messages hook!
+			add_action('admin_notices', array( &$this, 'mer_required_msg' ));		
+		}
 		// link to VLM_DSCNT settings page from the plugin page
 		add_filter( 'plugin_action_links_' . VLM_DSCNT_PLUGIN, array( &$this, 'plugin_page_to_settings_link' ), 10, 1 );
 		// load settings options
@@ -160,6 +173,19 @@ class EE_VLM_DSCNT {
 		//echo __FUNCTION__ . '<br />';
 
 	
+	}
+
+
+
+
+
+	/**
+	*		mer_required_msg
+	*		@access public
+	*		@return void
+	*/	
+	public function mer_required_msg() {
+		$this->show_msg('<p class="setting-error-message" title="MER is required">' . __( '<b>MER is NOT activated!</b> This addon works in conjunction with the Event Espresso Multi-Event Registration addon and is required in order to function properly. Please activate MER!', 'event_espresso' ) . '</p>', 'error' );
 	}
 	
 	
@@ -327,7 +353,7 @@ class EE_VLM_DSCNT {
 	
 //		echo __FUNCTION__ . '<br />';
 //		echo '<pre>' . print_r( $desc ) . '</pre><br />';
-//		echo "<p>" . __( $desc, 'espresso' ) . "</p>";
+//		echo "<p>" . __( $desc, 'event_espresso' ) . "</p>";
 	}
 
 
@@ -427,7 +453,7 @@ class EE_VLM_DSCNT {
 			
 				foreach($choices as $item) {
 					$item = explode("|",$item); // cat_name|cat_slug
-					$item[0] = esc_html__($item[0], 'espresso');
+					$item[0] = esc_html( $item[0] );
 					if (!empty($options[$id])) {
 						foreach ($options[$id] as $option_key => $option_val){
 							if ($item[1] == $option_key) {
@@ -458,8 +484,8 @@ class EE_VLM_DSCNT {
 		
 				echo "<select id='$id' class='select$field_class' name='" . $option_name . "[$id]'>";
 					foreach($choices as $item) {
-						$value 	= esc_attr($item, 'espresso');
-						$item 	= esc_html($item, 'espresso');
+						$value 	= esc_attr( $item );
+						$item 	= esc_html( $item );
 						
 						$selected = ($options[$id]==$value) ? 'selected="selected"' : '';
 						echo "<option value='$value' $selected>$item&nbsp;&nbsp;</option>";
@@ -476,7 +502,7 @@ class EE_VLM_DSCNT {
 				foreach($choices as $item) {
 					
 					$item = explode("|",$item);
-					$item[0] = esc_html($item[0], 'espresso');
+					$item[0] = esc_html( $item[0] );
 					
 					$selected = ($options[$id]==$item[1]) ? 'selected="selected"' : '';
 					echo "<option value='$item[1]' $selected>$item[0]&nbsp;&nbsp;</option>";
@@ -504,7 +530,7 @@ class EE_VLM_DSCNT {
 				foreach($choices as $item) {
 					
 					$item = explode("|",$item);
-					$item[0] = esc_html($item[0], 'espresso');
+					$item[0] = esc_html( $item[0] );
 					
 					$checked = '';
 					
@@ -531,7 +557,7 @@ class EE_VLM_DSCNT {
 				foreach($choices as $item) {
 					
 					$item = explode("|",$item);
-					$item[0] = esc_html($item[0], 'espresso');
+					$item[0] = esc_html( $item[0] );
 					
 					$checked = '';
 					
@@ -992,9 +1018,19 @@ class EE_VLM_DSCNT {
 		
 		$this->_settings_options = get_option('espresso_volume_discounts');
 		
+		if ( isset( $this->_settings_options['vlm-dscnt-categories-slct'] ) && ! empty( $this->_settings_options['vlm-dscnt-categories-slct'] )) {
+			foreach ( $this->_settings_options['vlm-dscnt-categories-slct'] as $cat_id => $discount_cat ) {			
+				if ( $discount_cat == 'true' ) {
+					$this->_vlm_dscnt_cats[] = $cat_id;
+				}
+			}			
+		}
+		//printr( $this->_vlm_dscnt_cats, '$this->_vlm_dscnt_cats  <br /><span style="font-size:10px;font-weight:normal;">' . __FILE__ . '<br />line no: ' . __LINE__ . '</span>', 'auto' );
+		
 		// start hooking
 		add_action( 'init', array( &$this, '_load_frontend_resources' ) );		
-		add_filter( 'filter_hook_espresso_shopping_cart_SQL_select', array( &$this, 'filter_shopping_cart_SQL_select' ), 1, 1 );
+//		add_filter( 'filter_hook_espresso_shopping_cart_SQL_select', array( &$this, 'filter_shopping_cart_SQL_select' ), 1, 1 );
+		add_filter( 'filter_hook_espresso_shopping_cart_event', array( &$this, 'filter_shopping_cart_event' ), 1, 1 );
 		add_action( 'action_hook_espresso_add_to_multi_reg_cart_block', array( &$this, 'hook_add_to_multi_reg_cart_block' )); 
 		add_action( 'action_hook_espresso_shopping_cart_before_total', array( &$this, 'hook_shopping_cart_before_total' ));
 		add_action( 'action_hook_espresso_shopping_cart_after_total', array( &$this, 'hook_shopping_cart_after_total' ));
@@ -1039,73 +1075,16 @@ class EE_VLM_DSCNT {
 
 
 
-	
-	/**
-	*		add content to the bottom of each multi_reg_cart_block in the shopping cart template
-	*		
-	*		@param 	array 	$event
-	*		@access public
-	*		@return 	echo string
-	*/	
-	public function hook_add_to_multi_reg_cart_block( $event ) {	
-		
-		echo '
-			<input class="vlm_dscnt_cat" type="hidden" name="vlm_dscnt_cat['.$event->id.']" value="'.$event->cat_id.'" />';
-			
-		switch ( $this->_settings_options['vlm-dscnt-factor-slct'] ) {
-			
-			case 'fctr_registrations' :
-				$this->_vlm_dscnt_cntr++;
-				echo '
-			<input class="vlm_dscnt_cntr" type="hidden" name="vlm_dscnt_cntr['.$event->id.']" value="1" />';
-			break;
-			
-			case 'fctr_dollar_value' :
-				$this->_vlm_dscnt_cntr = 'T';
-				echo '
-			<input class="vlm_dscnt_cntr" type="hidden" name="vlm_dscnt_cntr['.$event->id.']" value="T" />';
-			break;
-			
-			case 'fctr_meta_field' :
-
-				$event_meta = unserialize( $event->event_meta );	
-				
-				if ( isset( $event_meta[ $this->_settings_options['vlm-dscnt-meta-field-txt'] ] )) {
-					$vlm_dscnt_cntr = $event_meta[ $this->_settings_options['vlm-dscnt-meta-field-txt'] ];
-				} else {
-					$vlm_dscnt_cntr = $this->_settings_options['vlm-dscnt-default-meta-field-value-txt'];
-				}
-				
-				$this->_vlm_dscnt_cntr = $this->_vlm_dscnt_cntr + $vlm_dscnt_cntr;
-				echo '
-			<input class="vlm_dscnt_cntr" type="hidden" name="vlm_dscnt_cntr['.$event->id.']" value="'.$vlm_dscnt_cntr.'" />';				
-			break;
-			
-		}
-	
-	}
-
-
-
-
-
 	/**
 	*		edit the SELECT and FROM portion of the SQL statement used to poulate the Shopping Cart
 	*		
-	*		@param 	string	$sql
 	*		@access 	public
-	*		@return 	string
+	*		@param 	string	$sql
+	*		@return 		string
 	*/	
 	function filter_shopping_cart_SQL_select ( $sql ) {
 	
 		global $wpdb;
-		
-//		printr( $this->_settings_options, 'settings_options' );
-
-		// check if individual categories are being targeted, by checking against ALL categories selected
-		if ( isset( $this->_settings_options['vlm-dscnt-categories-slct']['A'] ) && $this->_settings_options['vlm-dscnt-categories-slct']['A'] == 'true' ) {
-			return $sql;
-		}
 
 		if ( defined( EVENTS_DETAIL_TABLE )) {
 			$evnt_tbl = EVENTS_DETAIL_TABLE;
@@ -1137,6 +1116,118 @@ class EE_VLM_DSCNT {
 
 
 
+
+	/**
+	*		edit an event in the Shopping Cart
+	*		
+	*		@access 	public
+	*		@param 	object	$event
+	*		@return 		string
+	*/	
+	function filter_shopping_cart_event ( $event ) {
+	
+		global $wpdb;
+
+		if ( defined( EVENTS_CATEGORY_TABLE )) {
+			$cat_tbl = EVENTS_CATEGORY_TABLE;
+		} else {
+			$cat_tbl = $wpdb->prefix . 'events_category_detail';
+		}
+
+		if ( defined( EVENTS_CATEGORY_REL_TABLE )) {
+			$evnt_cat_tbl = EVENTS_CATEGORY_REL_TABLE;
+		} else {
+			$evnt_cat_tbl = $wpdb->prefix . 'events_category_rel';
+		}
+
+		$sql = 'SELECT r.cat_id, c.category_name';		
+		$sql .= ' FROM ' . $evnt_cat_tbl . ' r ';
+		$sql .= ' JOIN ' . $cat_tbl . ' c ON  c.id = r.cat_id ';		
+		$sql .= ' WHERE  r.event_id = %d';
+		$results = $wpdb->get_results( $wpdb->prepare( $sql, $event->id ));
+		
+		$categories = array();
+		foreach( $results as $result ) {
+			$categories[ $result->cat_id ] = $result->category_name;
+		}		
+		$event->categories = $categories;
+	
+		return $event;
+		
+	}
+
+
+
+
+	
+	/**
+	*		add content to the bottom of each multi_reg_cart_block in the shopping cart template
+	*		
+	*		@param 	array 	$event
+	*		@access public
+	*		@return 	echo string
+	*/	
+	public function hook_add_to_multi_reg_cart_block( $event ) {	
+	
+//		printr( $event, '$event  <br /><span style="font-size:10px;font-weight:normal;">' . __FILE__ . '<br />line no: ' . __LINE__ . '</span>', 'auto' );
+//		printr( $this->_settings_options, '$this->_settings_options  <br /><span style="font-size:10px;font-weight:normal;">' . __FILE__ . '<br />line no: ' . __LINE__ . '</span>', 'auto' );
+//		printr( $this->_vlm_dscnt_cats, '$this->_vlm_dscnt_cats  <br /><span style="font-size:10px;font-weight:normal;">' . __FILE__ . '<br />line no: ' . __LINE__ . '</span>', 'auto' );
+		if ( isset( $event->categories )) {
+			foreach ( $event->categories as $cat_id => $cat_name  ) {
+				if (  isset( $this->_settings_options['vlm-dscnt-categories-slct']['A'] ) && $this->_settings_options['vlm-dscnt-categories-slct']['A'] == 'true' ) {
+					$this->_vlm_dscnt_cats[] = $cat_id;
+				}		
+				echo '
+			<input class="vlm_dscnt_cat" type="hidden" name="vlm_dscnt_cat['.$event->id.'][]" value="' . $cat_id . '" />';
+			}
+		}
+
+		
+//		echo '<h4>$cat_id : ' . $cat_id . '  <br /><span style="font-size:10px;font-weight:normal;">' . __FILE__ . '<br />line no: ' . __LINE__ . '</span></h4>';
+//		printr( $this->_vlm_dscnt_cats, '$this->_vlm_dscnt_cats  <br /><span style="font-size:10px;font-weight:normal;">' . __FILE__ . '<br />line no: ' . __LINE__ . '</span>', 'auto' );
+		
+//		echo '
+//			<input class="vlm_dscnt_cat" type="hidden" name="vlm_dscnt_cat['.$event->id.']" value="' . implode( ',', array_keys( $event->categories )) . '" />';
+		
+		
+		switch ( $this->_settings_options['vlm-dscnt-factor-slct'] ) {
+			
+			case 'fctr_registrations' :
+				$this->_vlm_dscnt_cntr++;
+				echo '
+			<input class="vlm_dscnt_cntr" type="hidden" name="vlm_dscnt_cntr['.$event->id.']" value="1" />';
+			break;
+			
+			case 'fctr_dollar_value' :
+				$this->_vlm_dscnt_cntr = 'T';
+				echo '
+			<input class="vlm_dscnt_cntr" type="hidden" name="vlm_dscnt_cntr['.$event->id.']" value="T" />';
+			break;
+			
+			case 'fctr_meta_field' :
+
+				$event_meta = unserialize( $event->event_meta );	
+				
+				if ( isset( $event_meta[ $this->_settings_options['vlm-dscnt-meta-field-txt'] ] )) {
+					$vlm_dscnt_cntr = $event_meta[ $this->_settings_options['vlm-dscnt-meta-field-txt'] ];
+				} else {
+					$vlm_dscnt_cntr = $this->_settings_options['vlm-dscnt-default-meta-field-value-txt'];
+				}
+				
+				$this->_vlm_dscnt_cntr += $vlm_dscnt_cntr;
+				
+				echo '
+			<input class="vlm_dscnt_cntr" type="hidden" name="vlm_dscnt_cntr['.$event->id.']" value="'.$vlm_dscnt_cntr.'" />	';				
+			
+			break;
+			
+		}
+	
+	}
+
+
+
+
 	
 	/**
 	*		add content to the bottom of the shopping cart template after the total
@@ -1146,13 +1237,11 @@ class EE_VLM_DSCNT {
 	*/	
 	public function hook_shopping_cart_before_total() {	
 	
-		$vlm_dscnt_cats = '';
-		foreach ( $this->_settings_options['vlm-dscnt-categories-slct'] as $cat_id => $apply_dscnt  ) {
-			if ( $apply_dscnt == 'true' ) {
-				$vlm_dscnt_cats .= $cat_id . ',';					
-			}
-		}
-		$vlm_dscnt_cats = rtrim( $vlm_dscnt_cats, ',' );
+		// grab categories and remove duplicates 
+		$this->_vlm_dscnt_cats = array_unique( $this->_vlm_dscnt_cats );
+		// convert to csv
+		$vlm_dscnt_cats = implode( ',', $this->_vlm_dscnt_cats );
+		
 		
 		$discount = '
 			<input id="vlm_dscnt_factor" type="hidden" name="vlm_dscnt_factor" value="'.$this->_settings_options['vlm-dscnt-factor-slct'].'" />
@@ -1288,7 +1377,7 @@ class EE_VLM_DSCNT {
 	
 		// do I have to explain this?
 		$_SESSION['espresso_session']['volume_discount'] = 0;
-		$_SESSION['espresso_session']['grand_total'] = $_SESSION['espresso_session']['pre_discount_total'];
+		$_SESSION['espresso_session']['grand_total'] = isset( $_SESSION['espresso_session']['pre_discount_total'] ) ? $_SESSION['espresso_session']['pre_discount_total'] : $_SESSION['espresso_session']['grand_total'];
 	
 	}
 
@@ -1358,9 +1447,11 @@ class EE_VLM_DSCNT {
 }
 
 
-// instantiate !!!
-$EE_VLM_DSCNT = EE_VLM_DSCNT::instance();
-
+function espresso_run_volume_discounts() {
+	// instantiate !!!
+	$EE_VLM_DSCNT = EE_VLM_DSCNT::instance();	
+}
+add_action( 'plugins_loaded', 'espresso_run_volume_discounts', 100 );
 
 /* End of file espresso-volume-discounts.php */
 /* Location: espresso-volume-discounts.php */
